@@ -36,9 +36,12 @@ export default function FormInput({ label, error, multiline = false, ...inputPro
       >
         <TextInput
           {...inputProps}
+          // Tắt tự viết hoa/tự sửa chữ: giữ nguyên text người dùng gõ, nhập liệu ổn định
+          // (đặc biệt khi gõ tiếng Việt có quá trình ghép dấu).
           autoCapitalize="none"
           autoCorrect={false}
           multiline={multiline}
+          // Màu placeholder + màu con trỏ/vùng bôi đen lấy theo theme.
           placeholderTextColor={colors.textSecondary}
           selectionColor={colors.primary}
           style={[
@@ -59,6 +62,7 @@ export default function FormInput({ label, error, multiline = false, ...inputPro
 }
 
 const styles = StyleSheet.create({
+  // Cả cụm field chiếm hết bề ngang, cách field kế tiếp 20px.
   field: {
     width: '100%',
     marginBottom: 20,
@@ -68,6 +72,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  // Khung bao input: flexDirection:row để đặt TextInput và icon lỗi nằm cạnh nhau.
   inputShell: {
     minHeight: 58,
     borderWidth: 1.5,
@@ -76,11 +81,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 17,
   },
+  // Biến thể nhiều dòng: cao cố định, nội dung bám mép trên thay vì canh giữa.
   multilineShell: {
     height: 138,
     alignItems: 'flex-start',
     paddingTop: 4,
   },
+  // flex:1 chiếm hết chỗ trống trong khung; minWidth:0 cho phép co lại khi icon lỗi xuất hiện.
   input: {
     flex: 1,
     minWidth: 0,
@@ -88,11 +95,13 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     fontSize: 17,
   },
+  // textAlignVertical:'top': chữ bắt đầu từ mép trên của ô nhiều dòng (cần cho Android).
   multilineInput: {
     height: '100%',
     paddingTop: 12,
     textAlignVertical: 'top',
   },
+  // Dòng mô tả lỗi màu đỏ nằm dưới ô nhập.
   error: {
     marginTop: 7,
     fontSize: 14,

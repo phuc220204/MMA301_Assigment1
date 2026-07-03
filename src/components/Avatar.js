@@ -44,11 +44,14 @@ export default function Avatar({ source, size = 116, subtle = false }) {
 }
 
 const styles = StyleSheet.create({
+  // overflow:hidden: cắt ảnh/icon theo khung tròn, không cho tràn ra ngoài borderRadius.
+  // justifyContent:flex-end: icon fallback bám đáy khung, nhìn tự nhiên như ảnh chân dung.
   avatar: {
     alignItems: 'center',
     justifyContent: 'flex-end',
     overflow: 'hidden',
   },
+  // Ảnh phủ kín khung; kết hợp resizeMode='cover' ở JSX để lấp đầy mà không méo hình.
   image: {
     width: '100%',
     height: '100%',

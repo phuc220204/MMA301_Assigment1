@@ -3,6 +3,7 @@
  * Vai trò: gói Pressable + style theo theme, hỗ trợ 2 biến thể (primary/secondary),
  * icon tùy chọn và trạng thái loading/disabled. Dùng ở Home, Profile, EditProfile.
  */
+// ActivityIndicator: vòng xoay loading; Pressable: vùng bấm hiện đại (biết được trạng thái pressed).
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -33,8 +34,10 @@ export default function AppButton({
 
   return (
     <Pressable
+      // accessibility*: giúp trình đọc màn hình đọc đúng "đây là nút" + tên nút.
       accessibilityRole="button"
       accessibilityLabel={title}
+      // Đang loading cũng khóa bấm để tránh submit 2 lần liên tiếp.
       disabled={disabled || loading}
       onPress={onPress}
       style={({ pressed }) => [
@@ -71,7 +74,9 @@ export default function AppButton({
   );
 }
 
+// Style tĩnh của nút; màu (phụ thuộc theme + variant) được set động ở trên.
 const styles = StyleSheet.create({
+  // minHeight 56: nút đủ lớn để dễ bấm; flexDirection:row để icon + chữ nằm ngang, canh giữa.
   button: {
     width: '100%',
     minHeight: 56,
@@ -87,6 +92,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.15,
   },
+  // Khoảng cách giữa icon và chữ.
   icon: {
     marginRight: 10,
   },

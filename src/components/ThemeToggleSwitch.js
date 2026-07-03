@@ -30,6 +30,7 @@ export default function ThemeToggleSwitch() {
       </View>
       <Switch
         accessibilityLabel="Dark Mode"
+        // ios_backgroundColor: màu rãnh khi TẮT trên iOS (Android dùng trackColor.false bên dưới).
         ios_backgroundColor={colors.border}
         // onValueChange: khi gạt -> gọi toggleTheme để đảo light <-> dark.
         onValueChange={toggleTheme}
@@ -43,11 +44,13 @@ export default function ThemeToggleSwitch() {
 }
 
 const styles = StyleSheet.create({
+  // Hàng ngang [icon][chữ][switch], canh giữa theo chiều dọc.
   row: {
     minHeight: 62,
     flexDirection: 'row',
     alignItems: 'center',
   },
+  // Ô vuông bo tròn chứa icon, icon nằm chính giữa.
   iconBox: {
     width: 48,
     height: 48,
@@ -55,6 +58,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // flex:1: phần chữ chiếm hết khoảng giữa, đẩy Switch sát mép phải.
   copy: {
     flex: 1,
     marginHorizontal: 14,

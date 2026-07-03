@@ -4,7 +4,9 @@
  * React Navigation với theme hiện tại. Mỗi screen nhận prop 'navigation' để chuyển màn.
  */
 import { useMemo } from 'react';
+// NavigationContainer: component gốc giữ trạng thái điều hướng của toàn app.
 import { NavigationContainer } from '@react-navigation/native';
+// createNativeStackNavigator: tạo stack dùng màn hình native (mượt hơn stack thuần JS).
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { useTheme } from '../context/ThemeContext';

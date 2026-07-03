@@ -24,6 +24,7 @@ export default function AppHeader({ title, onBack }) {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Go back"
+            // hitSlop: nới rộng vùng nhận chạm thêm 10px quanh nút để dễ bấm hơn.
             hitSlop={10}
             onPress={onBack}
             style={({ pressed }) => [styles.backButton, { opacity: pressed ? 0.55 : 1 }]}
@@ -44,6 +45,7 @@ export default function AppHeader({ title, onBack }) {
 }
 
 const styles = StyleSheet.create({
+  // Hàng ngang 3 phần [trái | tiêu đề | phải], canh giữa theo chiều dọc.
   header: {
     minHeight: 72,
     width: '100%',
@@ -52,15 +54,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
   },
+  // 2 vùng biên trái/phải cùng bề rộng cố định 44 -> tiêu đề ở giữa luôn cân tuyệt đối.
   side: {
     width: 44,
     alignItems: 'flex-start',
   },
+  // Nút back 44x44: đạt kích thước vùng chạm tối thiểu khuyến nghị (~44pt).
   backButton: {
     width: 44,
     height: 44,
     justifyContent: 'center',
   },
+  // flex:1 chiếm trọn phần giữa; kết hợp numberOfLines=1 ở JSX để cắt bớt tiêu đề quá dài.
   title: {
     flex: 1,
     textAlign: 'center',

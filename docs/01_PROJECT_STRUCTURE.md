@@ -1,5 +1,11 @@
 # 01. Cấu trúc project
 
+> Bộ tài liệu review gồm 3 file, mỗi file một nhiệm vụ (không trùng lặp nội dung):
+>
+> 1. `docs/01_PROJECT_STRUCTURE.md` (file này) — cấu trúc thư mục và vai trò từng file.
+> 2. `docs/02_TEACHER_QA.md` — câu hỏi vấn đáp và gợi ý trả lời.
+> 3. `EXPLANATION.md` (ở thư mục gốc) — giải thích chi tiết từng dòng code kèm số dòng, và 2 phần deep-dive về luồng đổi theme + luồng edit profile.
+
 ## Tổng quan
 
 Project là ứng dụng React Native chạy bằng Expo SDK 54, viết hoàn toàn bằng JavaScript. Điểm vào của ứng dụng là `index.js`, không phải thư mục `app/` của Expo Router. Điều hướng dùng React Navigation Native Stack và ứng dụng có đúng bốn màn hình.
@@ -29,14 +35,11 @@ profile-app/
 │       └── splash-icon.png
 ├── docs/
 │   ├── 01_PROJECT_STRUCTURE.md
-│   ├── 02_CODE_FLOW_EXPLANATION.md
-│   ├── 03_TEACHER_QA.md
-│   ├── 04_CLEANUP_CHECKLIST.md
-│   └── 05_PRESENTATION_SCRIPT.md
+│   └── 02_TEACHER_QA.md
 ├── src/
 │   ├── assets/
 │   │   └── images/
-│   │       └── .gitkeep
+│   │       └── AvatarProfile.png
 │   ├── components/
 │   │   ├── AppButton.js
 │   │   ├── AppHeader.js
@@ -62,6 +65,7 @@ profile-app/
 ├── app.json
 ├── CLAUDE.md
 ├── eslint.config.js
+├── EXPLANATION.md
 ├── index.js
 ├── package-lock.json
 ├── package.json
@@ -103,11 +107,11 @@ Chứa icon ứng dụng, adaptive icon Android và favicon web được tham ch
 
 ### `src/assets/images`
 
-Hiện chỉ có `.gitkeep` để Git giữ lại cấu trúc thư mục theo yêu cầu Assignment. Avatar hiện dùng icon `person` làm fallback nên chưa cần ảnh cục bộ trong thư mục này.
+Chứa `AvatarProfile.png` — ảnh avatar mặc định được `ProfileContext` nạp bằng `require()`. Component `Avatar` vẫn có fallback icon `person` khi source rỗng.
 
 ### `docs`
 
-Chứa tài liệu giải thích project, flow code, câu hỏi vấn đáp, checklist cleanup và kịch bản thuyết trình.
+Chứa tài liệu cấu trúc project (file này) và bộ câu hỏi vấn đáp (`02_TEACHER_QA.md`). Giải thích code chi tiết theo từng dòng nằm ở `EXPLANATION.md` tại thư mục gốc.
 
 ## Vai trò của các file chính
 

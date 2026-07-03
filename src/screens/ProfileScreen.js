@@ -2,9 +2,12 @@
  * ProfileScreen.js — Màn xem profile đầy đủ (route 'Profile').
  * Vai trò: hiển thị ProfileCard bản đầy đủ và 2 nút điều hướng sang EditProfile và Settings.
  */
+// ScrollView (vùng cuộn), StyleSheet (khai báo style), View (khối bố cục).
 import { ScrollView, StyleSheet, View } from 'react-native';
+// SafeAreaView: tự chừa vùng status bar/tai thỏ.
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// Component tái sử dụng + custom hook đọc context.
 import AppButton from '../components/AppButton';
 import AppHeader from '../components/AppHeader';
 import ProfileCard from '../components/ProfileCard';
@@ -15,6 +18,8 @@ import { useTheme } from '../context/ThemeContext';
 // Props: navigation — dùng để chuyển sang màn EditProfile/Settings.
 // Trả về: thẻ profile + 2 nút hành động.
 export default function ProfileScreen({ navigation }) {
+  // profile: dữ liệu từ ProfileContext — màn này là consumer nên TỰ re-render khi Edit lưu xong.
+  // colors: bảng màu theo theme hiện tại.
   const { profile } = useProfile();
   const { colors } = useTheme();
 
@@ -51,10 +56,13 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
+// Style tĩnh; màu theo theme được truyền động qua style mảng trong JSX.
 const styles = StyleSheet.create({
+  // Chiếm trọn màn hình.
   safeArea: {
     flex: 1,
   },
+  // Giới hạn bề rộng nội dung (responsive trên màn rộng) và canh giữa.
   content: {
     width: '100%',
     maxWidth: 600,
@@ -63,6 +71,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 30,
   },
+  // Card bo tròn + bóng đổ (shadow* cho iOS, elevation cho Android).
   card: {
     borderRadius: 28,
     paddingHorizontal: 22,
@@ -72,9 +81,11 @@ const styles = StyleSheet.create({
     shadowRadius: 22,
     elevation: 4,
   },
+  // Khoảng cách nút Edit với card phía trên.
   firstButton: {
     marginTop: 30,
   },
+  // Khoảng cách giữa 2 nút.
   secondButton: {
     marginTop: 14,
   },

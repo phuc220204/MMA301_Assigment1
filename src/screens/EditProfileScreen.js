@@ -3,9 +3,12 @@
  * Vai trò: dùng Formik quản lý form + Yup để validate name/bio; khi lưu hợp lệ thì gọi
  * updateProfile (ProfileContext) rồi quay lại màn trước. KeyboardAvoidingView tránh bàn phím che ô nhập.
  */
+// KeyboardAvoidingView: đẩy nội dung lên khi bàn phím mở; Platform: nhận biết iOS/Android để xử lý khác nhau.
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+// Formik: thư viện quản lý state form (values, errors, touched, submit).
 import { Formik } from 'formik';
+// Yup: thư viện khai báo schema validate; 'import * as' để gọi Yup.object(), Yup.string().
 import * as Yup from 'yup';
 
 import AppButton from '../components/AppButton';
@@ -82,6 +85,8 @@ export default function EditProfileScreen({ navigation }) {
           }) => (
             <ScrollView
               contentContainerStyle={styles.content}
+              // keyboardShouldPersistTaps='handled': khi bàn phím đang mở, bấm nút vẫn nhận tap ngay
+              // (không bị mất 1 lần chạm chỉ để đóng bàn phím).
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
@@ -140,13 +145,17 @@ export default function EditProfileScreen({ navigation }) {
   );
 }
 
+// Style tĩnh; màu theo theme được truyền động trong JSX.
 const styles = StyleSheet.create({
+  // Chiếm trọn màn hình.
   safeArea: {
     flex: 1,
   },
+  // KeyboardAvoidingView cần flex:1 để bao trọn vùng còn lại dưới header.
   keyboardArea: {
     flex: 1,
   },
+  // flexGrow:1 để cụm nút (actions) có thể bị đẩy xuống đáy; maxWidth cho responsive màn rộng.
   content: {
     flexGrow: 1,
     width: '100%',
@@ -156,6 +165,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 20,
   },
+  // Card chứa form: bo tròn + bóng đổ (shadow* cho iOS, elevation cho Android).
   card: {
     borderRadius: 28,
     padding: 22,
@@ -164,10 +174,12 @@ const styles = StyleSheet.create({
     shadowRadius: 22,
     elevation: 3,
   },
+  // Hàng đầu card: avatar + chữ giới thiệu xếp ngang, canh giữa theo chiều dọc.
   intro: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  // flex:1 để phần chữ chiếm hết bề ngang còn lại bên cạnh avatar.
   introCopy: {
     flex: 1,
     marginLeft: 18,
@@ -176,23 +188,26 @@ const styles = StyleSheet.create({
     fontSize: 24,
     lineHeight: 29,
     fontWeight: '700',
-    letterSpacing: -0.4,
+    letterSpacing: -0.4, // Chữ lớn nén nhẹ khoảng cách ký tự cho gọn gàng.
   },
   cardSubtitle: {
     marginTop: 5,
     fontSize: 15,
     lineHeight: 21,
   },
+  // Đường kẻ mảnh 1px phân tách phần giới thiệu với form bên dưới.
   divider: {
     height: 1,
     marginTop: 22,
     marginBottom: 24,
   },
+  // flex:1 + justifyContent:flex-end: đẩy cụm nút xuống đáy khi màn hình còn dư chỗ trống.
   actions: {
     flex: 1,
     justifyContent: 'flex-end',
     paddingTop: 34,
   },
+  // Khoảng cách nút Cancel với nút Save phía trên.
   cancel: {
     marginTop: 12,
   },

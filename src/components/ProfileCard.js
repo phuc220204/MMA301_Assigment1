@@ -51,6 +51,7 @@ export default function ProfileCard({ profile, compact = false }) {
 }
 
 const styles = StyleSheet.create({
+  // Bản gọn (Home): nội dung xếp dọc, canh giữa.
   compactContent: {
     alignItems: 'center',
   },
@@ -62,6 +63,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: -0.7,
   },
+  // maxWidth giữ dòng mô tả không quá dài, dễ đọc trên màn rộng.
   welcomeText: {
     maxWidth: 360,
     marginTop: 12,
@@ -69,6 +71,7 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     textAlign: 'center',
   },
+  // Bản đầy đủ (Profile): nội dung xếp dọc, canh giữa.
   profileContent: {
     alignItems: 'center',
   },
@@ -87,6 +90,7 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     textAlign: 'center',
   },
+  // Hàng tag: flexWrap cho phép xuống dòng khi màn hẹp; gap tạo khoảng cách đều giữa các chip.
   tags: {
     marginTop: 22,
     flexDirection: 'row',
@@ -94,6 +98,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
+  // Chip dạng viên thuốc: borderRadius = nửa chiều cao.
   tag: {
     minHeight: 36,
     borderRadius: 18,

@@ -5,6 +5,7 @@
  */
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+// Ionicons: bộ icon có sẵn của Expo (dùng icon moon/sunny cho khối preview).
 import { Ionicons } from '@expo/vector-icons';
 
 import AppHeader from '../components/AppHeader';
@@ -15,6 +16,7 @@ import { useTheme } from '../context/ThemeContext';
 // Props: navigation — dùng goBack() cho nút back trên header.
 // Trả về: khu vực bật Dark Mode + khu vực preview theme.
 export default function SettingsScreen({ navigation }) {
+  // colors: bảng màu hiện tại; isDark: cờ để đổi icon/nhãn của khối preview theo theme.
   const { colors, isDark } = useTheme();
 
   return (
@@ -55,10 +57,13 @@ export default function SettingsScreen({ navigation }) {
   );
 }
 
+// Style tĩnh; màu theo theme được truyền động trong JSX.
 const styles = StyleSheet.create({
+  // Chiếm trọn màn hình.
   safeArea: {
     flex: 1,
   },
+  // flexGrow:1 để footer có thể bám xuống đáy; maxWidth cho responsive màn rộng.
   content: {
     flexGrow: 1,
     width: '100%',
@@ -68,6 +73,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 24,
   },
+  // Nhãn nhóm kiểu chữ IN HOA nhỏ, giãn ký tự (letterSpacing) theo phong cách màn settings quen thuộc.
   sectionLabel: {
     marginLeft: 6,
     marginBottom: 9,
@@ -75,9 +81,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.2,
   },
+  // Nhãn THEME PREVIEW cần cách khối Appearance phía trên.
   previewLabel: {
     marginTop: 28,
   },
+  // Card bo tròn + bóng đổ (shadow* cho iOS, elevation cho Android).
   card: {
     borderRadius: 28,
     padding: 22,
@@ -86,10 +94,12 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 3,
   },
+  // Card preview: nội dung xếp dọc, canh giữa.
   previewCard: {
     alignItems: 'center',
     paddingVertical: 30,
   },
+  // Ô vuông bo tròn chứa icon mặt trời/mặt trăng, icon nằm chính giữa.
   previewIcon: {
     width: 68,
     height: 68,
@@ -102,6 +112,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
   },
+  // maxWidth giữ đoạn mô tả không quá dài, dễ đọc.
   previewText: {
     maxWidth: 360,
     marginTop: 8,
@@ -109,17 +120,20 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: 'center',
   },
+  // Hàng 4 ô màu mẫu; gap tạo khoảng cách đều giữa các ô.
   swatches: {
     flexDirection: 'row',
     gap: 10,
     marginTop: 22,
   },
+  // Mỗi ô màu: hình tròn nhỏ có viền — nhờ viền mà ô trùng màu nền vẫn nhìn thấy được.
   swatch: {
     width: 34,
     height: 34,
     borderRadius: 17,
     borderWidth: 1,
   },
+  // flex:1 + textAlignVertical:bottom: chữ footer bám xuống đáy vùng còn trống.
   footer: {
     flex: 1,
     textAlign: 'center',
