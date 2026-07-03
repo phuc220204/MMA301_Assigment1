@@ -1,3 +1,7 @@
+/**
+ * ProfileScreen.js — Màn xem profile đầy đủ (route 'Profile').
+ * Vai trò: hiển thị ProfileCard bản đầy đủ và 2 nút điều hướng sang EditProfile và Settings.
+ */
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,6 +11,9 @@ import ProfileCard from '../components/ProfileCard';
 import { useProfile } from '../context/ProfileContext';
 import { useTheme } from '../context/ThemeContext';
 
+// ProfileScreen: màn chi tiết profile.
+// Props: navigation — dùng để chuyển sang màn EditProfile/Settings.
+// Trả về: thẻ profile + 2 nút hành động.
 export default function ProfileScreen({ navigation }) {
   const { profile } = useProfile();
   const { colors } = useTheme();
@@ -24,12 +31,14 @@ export default function ProfileScreen({ navigation }) {
           <ProfileCard profile={profile} />
         </View>
 
+        {/* navigate('EditProfile'): mở màn chỉnh sửa profile */}
         <AppButton
           icon="create-outline"
           title="Edit Profile"
           onPress={() => navigation.navigate('EditProfile')}
           style={styles.firstButton}
         />
+        {/* navigate('Settings'): mở màn cài đặt (đổi theme) */}
         <AppButton
           icon="settings-outline"
           title="Settings"

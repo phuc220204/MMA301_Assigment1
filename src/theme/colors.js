@@ -1,3 +1,9 @@
+/**
+ * colors.js — Bảng màu (design tokens) cho 2 theme light & dark.
+ * Vai trò: tập trung toàn bộ mã màu một chỗ; ThemeContext chọn 1 trong 2 bảng này
+ * theo themeMode rồi phát xuống app qua colors. Đổi màu app chỉ cần sửa ở đây.
+ * Hai object PHẢI có cùng tập key để mọi component tham chiếu colors.<key> luôn hợp lệ.
+ */
 export const lightColors = {
   background: '#FCF6FF',
   card: '#FFFFFF',

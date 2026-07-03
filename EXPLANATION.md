@@ -1,878 +1,579 @@
-# EXPLANATION — Giải thích chi tiết source code
+# EXPLANATION.md — Giải thích chi tiết source code
 
-> Tài liệu này giải thích **toàn bộ** code thực tế của project, đi theo từng file. Mục tiêu là chứng minh em hiểu *tại sao* code được viết như vậy, không chỉ *mô tả* nó làm gì.
->
-> **Nguyên tắc viết:** giữ nguyên thuật ngữ kỹ thuật tiếng Anh (props, state, hook, controlled input, navigation...). Tập trung vào **TẠI SAO**. Không bịa: chỗ nào code **chưa** đáp ứng đầy đủ một yêu cầu của đề, tài liệu nói thẳng trong phần *Điểm yếu*.
+> Tài liệu ôn tập bảo vệ **Assignment 1: Multi-Screen Profile App** (React Native + Expo).
+> Mọi giải thích bám đúng code thực tế trong `src/`, có trích **tên file + số dòng** để bạn mở đúng chỗ kiểm chứng.
+> Quy ước: mỗi điểm đều cố gắng trả lời 3 câu — **(a) làm gì**, **(b) tại sao cần**, **(c) khái niệm liên quan**.
 
 ---
 
 ## Mục lục
 
-1. [Tổng quan kiến trúc](#1-tổng-quan-kiến-trúc)
-2. [package.json — dependencies](#2-packagejson--dependencies)
-3. [index.js — entry point](#3-indexjs--entry-point)
-4. [App.js — root component & provider hierarchy](#4-appjs--root-component--provider-hierarchy)
-5. [src/theme/colors.js — design tokens](#5-srcthemecolorsjs--design-tokens)
-6. [src/context/ThemeContext.js — custom ThemeContext](#6-srccontextthemecontextjs--custom-themecontext)
-7. [src/context/ProfileContext.js — profile state](#7-srccontextprofilecontextjs--profile-state)
-8. [src/navigation/AppNavigator.js — Stack Navigator](#8-srcnavigationappnavigatorjs--stack-navigator)
-9. [src/screens/HomeScreen.js](#9-srcscreenshomescreenjs)
-10. [src/screens/ProfileScreen.js](#10-srcscreensprofilescreenjs)
-11. [src/screens/EditProfileScreen.js — Formik + Yup](#11-srcscreenseditprofilescreenjs--formik--yup)
-12. [src/screens/SettingsScreen.js](#12-srcscreenssettingsscreenjs)
-13. [src/components/ProfileCard.js](#13-srccomponentsprofilecardjs)
-14. [src/components/ThemeToggleSwitch.js](#14-srccomponentsthemetoggleswitchjs)
-15. [src/components/FormInput.js](#15-srccomponentsforminputjs)
-16. [src/components/AppButton.js](#16-srccomponentsappbuttonjs)
-17. [src/components/AppHeader.js](#17-srccomponentsappheaderjs)
-18. [src/components/Avatar.js](#18-srccomponentsavatarjs)
-19. [Bảng map tiêu chí chấm điểm](#19-bảng-map-tiêu-chí-chấm-điểm)
-20. [Điểm yếu & hạn chế (trung thực)](#20-điểm-yếu--hạn-chế-trung-thực)
-21. [5 điểm cần nắm chắc nhất](#21-5-điểm-cần-nắm-chắc-nhất)
+- [Tổng quan công nghệ (từ package.json)](#tổng-quan-công-nghệ-từ-packagejson)
+- [Sơ đồ luồng khởi động & cây Provider](#sơ-đồ-luồng-khởi-động--cây-provider)
+- [PHẦN 1 — Giải thích từng file](#phần-1--giải-thích-từng-file)
+  - [1. `index.js` — Điểm vào](#1-indexjs--điểm-vào)
+  - [2. `App.js` — Root component](#2-appjs--root-component)
+  - [3. `src/context/ThemeContext.js` — Context theme](#3-srccontextthemecontextjs--context-theme)
+  - [4. `src/context/ProfileContext.js` — Context profile](#4-srccontextprofilecontextjs--context-profile)
+  - [5. `src/theme/colors.js` — Bảng màu](#5-srcthemecolorsjs--bảng-màu)
+  - [6. `src/navigation/AppNavigator.js` — Điều hướng](#6-srcnavigationappnavigatorjs--điều-hướng)
+  - [7. `src/screens/HomeScreen.js`](#7-srcscreenshomescreenjs)
+  - [8. `src/screens/ProfileScreen.js`](#8-srcscreensprofilescreenjs)
+  - [9. `src/screens/EditProfileScreen.js`](#9-srcscreenseditprofilescreenjs)
+  - [10. `src/screens/SettingsScreen.js`](#10-srcscreenssettingsscreenjs)
+  - [11. `src/components/AppHeader.js`](#11-srccomponentsappheaderjs)
+  - [12. `src/components/Avatar.js`](#12-srccomponentsavatarjs)
+  - [13. `src/components/ProfileCard.js`](#13-srccomponentsprofilecardjs)
+  - [14. `src/components/AppButton.js`](#14-srccomponentsappbuttonjs)
+  - [15. `src/components/FormInput.js`](#15-srccomponentsforminputjs)
+  - [16. `src/components/ThemeToggleSwitch.js`](#16-srccomponentsthemetoggleswitchjs)
+- [PHẦN 2 — DEEP DIVE: Luồng đổi Theme (Light/Dark)](#phần-2--deep-dive-luồng-đổi-theme-lightdark)
+- [PHẦN 3 — DEEP DIVE: Luồng Edit Profile](#phần-3--deep-dive-luồng-edit-profile)
+- [CÂU HỎI GIẢNG VIÊN CÓ THỂ HỎI & GỢI Ý TRẢ LỜI](#câu-hỏi-giảng-viên-có-thể-hỏi--gợi-ý-trả-lời)
 
 ---
 
-## 1. Tổng quan kiến trúc
+## Tổng quan công nghệ (từ package.json)
 
-App là một ứng dụng **React Native** chạy bằng **Expo SDK 54**, viết bằng **JavaScript** (không có file `.ts`/`.tsx`). Có đúng **4 screen**: Home, Profile, Edit Profile, Settings.
+Nguồn: [package.json](package.json). Các thư viện chính và vai trò:
 
-### Sơ đồ cây render (component tree)
+| Thư viện | Vai trò trong app |
+|---|---|
+| `expo ~54.0.34` | Nền tảng chạy/đóng gói app React Native (Expo Go, dev build). |
+| `react 19.1.0` / `react-native 0.81.5` | Thư viện UI và runtime native. Cung cấp `useState`, `useContext`, `useMemo`, component (`View`, `Text`, `TextInput`, `Pressable`, `Switch`...). |
+| `@react-navigation/native` + `@react-navigation/native-stack` | Điều hướng nhiều màn (stack navigator). |
+| `react-native-screens`, `react-native-gesture-handler`, `react-native-safe-area-context` | Phụ thuộc nền cho navigation + xử lý vùng an toàn (tai thỏ, status bar). |
+| `formik 2.4.9` | Quản lý state form (values, errors, touched, submit) ở màn Edit Profile. |
+| `yup 1.7.1` | Định nghĩa **validationSchema** kiểm tra dữ liệu form trước khi lưu. |
+| `@expo/vector-icons` | Bộ icon `Ionicons` dùng khắp app. |
+| `expo-status-bar` | Điều khiển màu chữ/icon trên thanh status. |
 
-```text
-index.js  →  registerRootComponent(App)
-└── App  (App.js)
-    └── SafeAreaProvider          ← cung cấp thông tin safe area (notch, status bar)
-        └── ThemeProvider         ← cung cấp theme light/dark cho toàn app (Context)
-            └── ProfileProvider   ← cung cấp dữ liệu profile cho toàn app (Context)
-                └── AppContent
-                    ├── StatusBar (màu chữ đổi theo theme)
-                    └── AppNavigator
-                        └── NavigationContainer
-                            └── Stack.Navigator (initialRouteName = "Home")
-                                ├── Home      → HomeScreen
-                                ├── Profile   → ProfileScreen
-                                ├── EditProfile → EditProfileScreen
-                                └── Settings  → SettingsScreen
-```
-
-### Hai ý tưởng kiến trúc cốt lõi (cần nhớ)
-
-1. **State dùng chung được "nâng lên" (lift up) trên navigator.** `ThemeProvider` và `ProfileProvider` bọc *bên ngoài* `AppNavigator`. Vì mọi screen đều nằm bên dưới chúng, mọi screen đều đọc được cùng một theme và cùng một profile. Nếu để state trong một screen, các screen khác sẽ không thấy.
-
-2. **Component đọc state qua custom hook, không qua props xuyên tầng.** Thay vì truyền `colors`/`profile` qua `App → Navigator → Screen → Card → Avatar`, mỗi component tự gọi `useTheme()` hoặc `useProfile()`. Đây là cách **Context API** giải quyết vấn đề *prop drilling*.
+**Kiến trúc tổng:** App dùng **2 Context** làm "global state" — `ThemeContext` (giao diện sáng/tối) và `ProfileContext` (thông tin người dùng) — cộng với **React Navigation** để chuyển giữa 4 màn: Home → Profile → EditProfile / Settings.
 
 ---
 
-## 2. package.json — dependencies
+## Sơ đồ luồng khởi động & cây Provider
 
-Đây không phải file code nhưng quyết định "app dùng gì". Giải thích từng dependency quan trọng:
+```
+index.js  (registerRootComponent)
+   └─ App.js
+        └─ SafeAreaProvider
+             └─ ThemeProvider        ← cấp { colors, isDark, toggleTheme }
+                  └─ ProfileProvider  ← cấp { profile, updateProfile }
+                       └─ AppContent
+                            ├─ StatusBar (màu theo theme)
+                            └─ AppNavigator (NavigationContainer + Stack)
+                                 ├─ HomeScreen     (route "Home", màn đầu)
+                                 ├─ ProfileScreen  (route "Profile")
+                                 ├─ EditProfileScreen (route "EditProfile")
+                                 └─ SettingsScreen (route "Settings")
+```
 
-| Package | Vai trò | Tại sao có mặt |
-| --- | --- | --- |
-| `expo: ~54.0.34` | Nền tảng Expo SDK 54 | Toolchain build/run cho Android, iOS, web |
-| `react: 19.1.0` | Thư viện React | Cung cấp `useState`, `useContext`, `useMemo`, JSX |
-| `react-native: 0.81.5` | Runtime React Native | `View`, `Text`, `TextInput`, `StyleSheet`, `Switch`... |
-| `@react-navigation/native: ^7.3.3` | Lõi React Navigation | `NavigationContainer`, navigation object |
-| `@react-navigation/native-stack: ^7.17.5` | **Stack Navigator** | `createNativeStackNavigator()` → đáp ứng yêu cầu Stack Navigator |
-| `react-native-screens`, `react-native-safe-area-context` | Native deps cho navigation + safe area | Bắt buộc đi kèm React Navigation; cung cấp `SafeAreaView` |
-| `formik: ^2.4.9` | **Quản lý form** | values/touched/errors/submit cho Edit Profile |
-| `yup: ^1.7.1` | **Schema validation** | Khai báo luật validate tách khỏi JSX |
-| `@expo/vector-icons: ^15.0.3` | Bộ icon (`Ionicons`) | Icon person, arrow-back, sunny/moon, alert... |
-| `expo-font: ~14.0.12` | Backend font cho vector-icons | Khai báo trong `app.json` plugins |
-| `expo-status-bar: ~3.0.9` | Điều khiển `StatusBar` | Đổi màu chữ status bar theo theme |
-| `react-native-gesture-handler: ~2.28.0` | Cử chỉ vuốt | Import đầu `index.js` (yêu cầu của navigation) |
-| `react-dom`, `react-native-web` | Hỗ trợ chạy web | Cho script `expo start --web` |
-
-**Điểm quan trọng để bảo vệ bài:**
-- `"main": "index.js"` → app **không** dùng Expo Router (Expo Router sẽ là `expo-router/entry`).
-- Không có `@react-navigation/bottom-tabs` → **không** dùng Bottom Tabs.
-- Không có `@react-native-async-storage/async-storage` → **không** persistence (dữ liệu chỉ trong RAM).
-- Không có `styled-components` → styling dùng **`StyleSheet`** (đề cho phép "StyleSheet *hoặc* Styled-Components", nên đây là lựa chọn hợp lệ).
+Thứ tự Provider quan trọng: `ThemeProvider`/`ProfileProvider` phải **bọc bên ngoài** mọi screen thì các screen mới gọi được `useTheme()` / `useProfile()`.
 
 ---
 
-## 3. index.js — entry point
+# PHẦN 1 — Giải thích từng file
 
-```js
-import 'react-native-gesture-handler';
-import { registerRootComponent } from 'expo';
-import App from './App';
-
-registerRootComponent(App);
-```
-
-**Vai trò:** file khởi động đầu tiên Expo chạy (vì `package.json` khai báo `main: index.js`).
-
-**Giải thích từng dòng:**
-
-- `import 'react-native-gesture-handler';`
-  - **(a) LÀM GÌ:** import side-effect (không lấy biến nào, chỉ chạy code khởi tạo của thư viện).
-  - **(b) TẠI SAO ở đây / đặt đầu tiên:** `react-native-gesture-handler` yêu cầu được import **trước** mọi thứ khác để gắn đúng vào native view. Đặt sai vị trí có thể gây lỗi cử chỉ vuốt trên một số thiết bị. React Navigation native-stack dựa trên cử chỉ nên dòng này phục vụ navigation.
-- `registerRootComponent(App)`
-  - **(a) LÀM GÌ:** đăng ký `App` làm component gốc của ứng dụng.
-  - **(b) TẠI SAO dùng hàm của Expo thay vì `AppRegistry`:** `registerRootComponent` là wrapper của Expo gọi `AppRegistry.registerComponent` đồng thời thiết lập môi trường phù hợp cho cả Android, iOS và web — viết một lần chạy đa nền tảng.
-
-**KHÁI NIỆM — entry point & root component:** mọi app React Native cần một "component gốc" để framework biết bắt đầu render từ đâu. Đây chính là gốc của cây component ở mục 1.
+> Đi theo đúng thứ tự app khởi động.
 
 ---
 
-## 4. App.js — root component & provider hierarchy
+## 1. `index.js` — Điểm vào
 
-```js
-function AppContent() {
-  const { isDark } = useTheme();
-  return (
-    <>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <AppNavigator />
-    </>
-  );
-}
+File: [index.js](index.js) (13 dòng).
 
-export default function App() {
-  return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <ThemeProvider>
-        <ProfileProvider>
-          <AppContent />
-        </ProfileProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
-  );
-}
-```
+**Vai trò:** entry point thật sự của app Expo — nơi React được gắn vào thiết bị.
 
-**Vai trò:** root component — nơi lắp ráp các **provider** dùng chung trước khi render navigator.
-
-**Lướt import:**
-- `StatusBar` từ `expo-status-bar`: điều khiển màu chữ/icon trên thanh status bar hệ thống.
-- `SafeAreaProvider`, `initialWindowMetrics` từ `react-native-safe-area-context`: đo và cung cấp kích thước vùng an toàn (notch, status bar, home indicator). `initialWindowMetrics` là số đo có sẵn ngay frame đầu.
-- `ProfileProvider`, `ThemeProvider`, `useTheme`: các provider/hook tự viết.
-- `AppNavigator`: cụm điều hướng.
-
-**Giải thích logic:**
-
-- **Thứ tự provider lồng nhau** (`SafeAreaProvider → ThemeProvider → ProfileProvider → AppContent`)
-  - **(a) LÀM GÌ:** mỗi provider đặt một "vùng dữ liệu" bao quanh cây con của nó.
-  - **(b) TẠI SAO theo thứ tự này:** provider phải nằm **trên** mọi component cần đọc nó. Vì `AppNavigator` và toàn bộ screen nằm trong cùng, chúng đọc được cả theme lẫn profile. Thứ tự Theme trước Profile ở đây không bắt buộc về mặt logic (hai context độc lập), nhưng đặt Theme ngoài cùng là hợp lý vì cả `AppContent` (StatusBar) lẫn navigator đều cần theme.
-
-- **Tại sao tách `AppContent` ra khỏi `App`?**
-  - **(a) LÀM GÌ:** `AppContent` gọi `useTheme()` để lấy `isDark`, đổi `StatusBar` sang chữ sáng khi dark mode.
-  - **(b) TẠI SAO phải tách:** một component **không** thể gọi `useTheme()` của chính `ThemeProvider` mà nó render ra. Hook chỉ đọc được context khi component **nằm bên trong** provider. `App` render `ThemeProvider`, nên `App` ở *ngoài* provider; phải tạo `AppContent` *bên trong* provider thì `useTheme()` mới chạy. Nếu gọi `useTheme()` ngay trong `App`, sẽ ném lỗi *"useTheme must be used inside ThemeProvider"*. Đây là một chi tiết hiểu bài quan trọng.
-  - **(c) KHÁI NIỆM — provider/consumer boundary:** ranh giới "ai ở trong, ai ở ngoài" provider quyết định ai đọc được context.
-
-- `<> ... </>` — **React Fragment**
-  - **(a) LÀM GÌ:** nhóm `StatusBar` và `AppNavigator` mà không tạo thêm một `View` thừa.
-  - **(b) TẠI SAO:** JSX yêu cầu trả về một node gốc duy nhất; Fragment thỏa điều đó mà không thêm layout/box vào cây.
-
-- `<StatusBar style={isDark ? 'light' : 'dark'} />`
-  - **(a) LÀM GÌ:** khi dark mode → chữ status bar màu sáng để đọc được trên nền tối; ngược lại chữ tối.
-
-**KHÁI NIỆM lần đầu xuất hiện:**
-- **JSX:** cú pháp giống HTML để mô tả UI bằng JavaScript; mỗi thẻ là một lời gọi component.
-- **Provider:** component bọc cây con và "phát" một giá trị Context xuống dưới.
-
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *Tại sao có `AppContent` riêng?* → Vì cần gọi `useTheme()` ở **bên trong** `ThemeProvider`; component render ra provider thì ở ngoài, không đọc được context của chính nó.
-- *Tại sao provider bọc navigator chứ không nằm trong một screen?* → Để mọi screen chia sẻ cùng theme/profile và tránh prop drilling.
+**Import / lệnh:**
+- [index.js:5](index.js#L5) `import 'react-native-gesture-handler';`
+  - (a) Import dạng **side-effect** (không lấy biến nào, chỉ chạy code khởi tạo của thư viện).
+  - (b) `react-native-screens` / navigation cần gesture-handler được nạp **sớm nhất**; tài liệu yêu cầu đặt dòng này ở **đầu file entry**, nếu đặt sau dễ lỗi cử chỉ vuốt.
+  - (c) *Side-effect import* = import chỉ để chạy, khác với `import X from '...'` lấy giá trị.
+- [index.js:7](index.js#L7) `import { registerRootComponent } from 'expo';` — lấy hàm đăng ký component gốc của Expo.
+- [index.js:9](index.js#L9) `import App from './App';` — lấy component `App` (root) để đăng ký.
+- [index.js:12](index.js#L12) `registerRootComponent(App);`
+  - (a) Đăng ký `App` làm component gốc.
+  - (b) Hàm này bọc sẵn `AppRegistry.registerComponent` của React Native và xử lý khác biệt giữa **Expo Go** và **native build**, nên dùng nó thay vì tự gọi `AppRegistry`.
 
 ---
 
-## 5. src/theme/colors.js — design tokens
+## 2. `App.js` — Root component
 
-```js
-export const lightColors = { background: '#FCF6FF', card: '#FFFFFF', text: '#111827', /* ... */ };
-export const darkColors  = { background: '#111827', card: '#1F2937', text: '#F9FAFB', /* ... */ };
-```
+File: [App.js](App.js) (44 dòng).
 
-**Vai trò:** khai báo tập trung **bảng màu** (design tokens) cho light và dark. Hai object có **cùng bộ key** (`background`, `card`, `text`, `textSecondary`, `primary`, `primaryLight`, `error`, `border`, `input`, `shadow`, `white`).
+**Vai trò:** dựng **cây Provider** (SafeArea → Theme → Profile) bao toàn app rồi render `AppNavigator`. Đây là nơi khởi tạo state dùng chung.
 
-**Giải thích thiết kế:**
-- **(a) LÀM GÌ:** mỗi key là một "vai trò màu" (semantic token) — ví dụ `text` là màu chữ chính, `primary` là màu nhấn.
-- **(b) TẠI SAO dùng cùng bộ key cho cả hai theme:** component chỉ cần viết `colors.text`, không cần biết đang là light hay dark. Khi đổi theme, chỉ object `colors` bị thay; mọi nơi tự nhận màu mới. Đây là lý do component như `AppButton`, `ProfileCard` không hề chứa mã hex — tránh hardcode màu rải rác.
-- **(c) Trade-off:** dùng token semantic (như `text`, `card`) thay vì token theo màu (như `purple`, `gray`) giúp đổi theme dễ; nhược điểm là phải đặt tên vai trò cẩn thận.
+**Import:**
+- [App.js:6](App.js#L6) `StatusBar` (expo-status-bar) — component điều khiển màu thanh status.
+- [App.js:7](App.js#L7) `SafeAreaProvider, initialWindowMetrics` — Provider vùng an toàn + số đo khung hình ban đầu.
+- [App.js:9-11](App.js#L9-L11) — `ProfileProvider`, `ThemeProvider` + `useTheme`, và `AppNavigator`.
 
-> Lưu ý: `white: '#FFFFFF'` cố tình giữ trắng ở cả hai theme — dùng cho chữ trên nút primary (luôn nền tím đậm) nên luôn cần trắng.
+**`function AppContent()` — [App.js:16-26](App.js#L16-L26)**
+- (a) Đọc theme hiện tại rồi render `StatusBar` + `AppNavigator`.
+- (b) **Tại sao tách riêng?** Vì `useTheme()` chỉ chạy được khi component nằm **bên trong** `ThemeProvider`. `App` (cha) nằm *ngoài* Provider nên không gọi được hook; phải tách `AppContent` đặt vào bên trong.
+- Dòng quan trọng:
+  - [App.js:17](App.js#L17) `const { isDark } = useTheme();` — lấy cờ `isDark` từ ThemeContext.
+    - (c) *useContext / custom hook*: `useTheme` là custom hook bọc `useContext` để đọc giá trị context.
+  - [App.js:22](App.js#L22) `<StatusBar style={isDark ? 'light' : 'dark'} />` — theme tối → chữ status màu sáng cho dễ đọc.
+    - (c) *JSX*: cú pháp giống HTML để mô tả UI trong JS; `{...}` nhúng biểu thức JS.
+  - [App.js:20-24](App.js#L20-L24) dùng **Fragment** `<>...</>` để trả về 2 phần tử anh em mà không thêm `View` thừa.
 
----
-
-## 6. src/context/ThemeContext.js — custom ThemeContext
-
-```js
-const ThemeContext = createContext(undefined);
-
-export function ThemeProvider({ children }) {
-  const [themeMode, setThemeMode] = useState('light');
-  const isDark = themeMode === 'dark';
-
-  const value = useMemo(() => ({
-    themeMode,
-    isDark,
-    colors: isDark ? darkColors : lightColors,
-    toggleTheme: () => setThemeMode((current) => (current === 'light' ? 'dark' : 'light')),
-  }), [isDark, themeMode]);
-
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (!context) throw new Error('useTheme must be used inside ThemeProvider.');
-  return context;
-}
-```
-
-**Vai trò:** đây chính là **custom ThemeContext** mà đề yêu cầu — nơi lưu trạng thái light/dark và phát ra toàn app.
-
-**Lướt import:** `createContext` (tạo context), `useContext` (đọc context), `useMemo` (memo hóa giá trị), `useState` (giữ state); `darkColors`/`lightColors` từ file token.
-
-**Giải thích từng phần:**
-
-- `const ThemeContext = createContext(undefined);`
-  - **(a) LÀM GÌ:** tạo một "kênh" Context, giá trị mặc định `undefined`.
-  - **(b) TẠI SAO mặc định `undefined`:** để hook `useTheme()` phát hiện trường hợp dùng *ngoài* provider (lúc đó `useContext` trả về `undefined`) và ném lỗi rõ ràng. Đây là kỹ thuật "fail fast".
-  - **(c) KHÁI NIỆM — Context API:** cơ chế React truyền dữ liệu xuống cây con mà không cần truyền props qua từng tầng.
-
-- `const [themeMode, setThemeMode] = useState('light');`
-  - **(a) LÀM GÌ:** giữ chế độ theme dưới dạng chuỗi `'light'`/`'dark'`, khởi đầu `'light'`.
-  - **(b) TẠI SAO dùng `useState`:** đề yêu cầu quản lý theme bằng state; khi state đổi, React tự render lại các consumer.
-  - **(c) KHÁI NIỆM — useState:** hook trả về `[giá trị, hàm cập nhật]`. Gọi hàm cập nhật sẽ lên lịch re-render.
-
-- `const isDark = themeMode === 'dark';`
-  - **(a) LÀM GÌ:** biến dẫn xuất (derived value) — không phải state riêng.
-  - **(b) TẠI SAO không tạo `useState` cho `isDark`:** `isDark` luôn suy ra được từ `themeMode`. Tạo state thứ hai sẽ có nguy cơ hai state lệch nhau. Nguyên tắc: **không lưu cái có thể tính ra.**
-
-- `toggleTheme` dùng **functional update** `setThemeMode((current) => ...)`
-  - **(a) LÀM GÌ:** đảo `'light' ↔ 'dark'` dựa trên giá trị hiện tại.
-  - **(b) TẠI SAO dùng dạng `(current) => ...`:** đảm bảo luôn lật trên giá trị mới nhất, an toàn nếu có nhiều cập nhật liên tiếp — không phụ thuộc biến ngoài có thể cũ (stale closure).
-
-- `const value = useMemo(() => ({...}), [isDark, themeMode]);`
-  - **(a) LÀM GÌ:** đóng gói `themeMode`, `isDark`, `colors`, `toggleTheme` thành object phát qua Context.
-  - **(b) TẠI SAO dùng `useMemo`:** mỗi lần `ThemeProvider` render, nếu tạo object `value` mới thì **mọi** consumer đều render lại do *identity* của object đổi. `useMemo` chỉ tạo object mới khi `themeMode`/`isDark` thực sự đổi → tránh render thừa.
-  - **(c) KHÁI NIỆM — useMemo & referential identity:** React so sánh context value theo tham chiếu; giữ nguyên tham chiếu khi dữ liệu không đổi giúp tối ưu.
-
-- Hook `useTheme()` + kiểm tra `if (!context) throw`
-  - **(a) LÀM GÌ:** bọc `useContext(ThemeContext)` và chặn việc dùng ngoài provider.
-  - **(b) TẠI SAO viết custom hook:** (1) gọn — component chỉ `const { colors } = useTheme()`; (2) báo lỗi sớm và dễ hiểu nếu dùng sai vị trí; (3) giấu chi tiết `ThemeContext` để dễ refactor sau này.
-  - **(c) KHÁI NIỆM — custom hook:** một hàm bắt đầu bằng `use`, có thể gọi các hook khác và được tái sử dụng.
-
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *Đây có phải "custom ThemeContext" như đề yêu cầu không?* → Đúng. `createContext` + `ThemeProvider` + hook `useTheme` tự viết chính là custom ThemeContext.
-- *Vì sao toàn app đổi màu cùng lúc?* → Mọi component đọc `colors` từ **cùng một** context. Khi `value` đổi, React render lại tất cả consumer với palette mới.
-- *`useMemo` ở đây để làm gì?* → Tránh tạo object `value` mới mỗi render, qua đó hạn chế re-render dây chuyền của consumer.
-- *Nếu để theme trong `useState` ở `SettingsScreen` thì sao?* → Các screen khác không biết theme đổi; phải nâng state lên Context mới chia sẻ được.
+**`export default function App()` — [App.js:32-43](App.js#L32-L43)**
+- (a) Trả về cây UI gốc: `SafeAreaProvider` → `ThemeProvider` → `ProfileProvider` → `AppContent`.
+- (b) **Thứ tự lồng nhau** quyết định phạm vi: vì `AppContent` (và toàn bộ navigator bên trong) nằm trong cả hai Provider nên **mọi màn** đều dùng được theme và profile.
+- [App.js:34](App.js#L34) `initialMetrics={initialWindowMetrics}` — cấp số đo khung ngay từ đầu để tránh "nhảy layout" (flicker) khi đo vùng an toàn.
 
 ---
 
-## 7. src/context/ProfileContext.js — profile state
+## 3. `src/context/ThemeContext.js` — Context theme
 
-```js
-const ProfileContext = createContext(undefined);
+File: [src/context/ThemeContext.js](src/context/ThemeContext.js) (50 dòng). **Đây là trái tim của luồng đổi theme.**
 
-const initialProfile = {
-  name: 'Nguyen Van A',
-  bio: 'React Native learner building clean mobile apps.',
-  avatar: null,
-};
+**Vai trò:** tạo và cung cấp state theme (sáng/tối) cho toàn app.
 
-export function ProfileProvider({ children }) {
-  const [profile, setProfile] = useState(initialProfile);
+**Import — [ThemeContext.js:6-8](src/context/ThemeContext.js#L6-L8):**
+- `createContext` — tạo "kênh" truyền dữ liệu xuyên cây component.
+- `useContext` — đọc dữ liệu từ kênh đó.
+- `useMemo` — ghi nhớ (cache) một giá trị, chỉ tính lại khi dependency đổi.
+- `useState` — tạo state cục bộ trong component.
+- `darkColors, lightColors` — 2 bảng màu nhập từ `theme/colors.js`.
 
-  const value = useMemo(() => ({
-    profile,
-    updateProfile: (updates) => setProfile((current) => ({ ...current, ...updates })),
-  }), [profile]);
+**[ThemeContext.js:11](src/context/ThemeContext.js#L11)** `const ThemeContext = createContext(undefined);`
+- (a) Tạo context, giá trị mặc định `undefined`.
+- (b) Để `undefined` **có chủ đích**: nếu ai đó dùng `useTheme()` ngoài Provider, context sẽ là `undefined` và ta ném lỗi (xem dòng 44) → bắt bug sớm.
+- (c) *Context API*: cơ chế của React để chia sẻ dữ liệu mà không truyền props qua từng tầng.
 
-  return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
-}
+**`ThemeProvider({ children })` — [ThemeContext.js:16-35](src/context/ThemeContext.js#L16-L35)**
+- (a) Bọc cây con và cấp giá trị theme xuống.
+- (b) `children` là **props đặc biệt** — phần JSX được đặt giữa `<ThemeProvider>...</ThemeProvider>` (chính là `<ProfileProvider>` trong App.js).
+- Dòng quan trọng:
+  - [ThemeContext.js:18](src/context/ThemeContext.js#L18) `const [themeMode, setThemeMode] = useState('light');`
+    - (a) Tạo state `themeMode` khởi tạo `'light'`, kèm hàm cập nhật `setThemeMode`.
+    - (b) Đây là **nguồn sự thật duy nhất (single source of truth)** của theme. Đổi nó = đổi cả app.
+    - (c) *useState*: trả về `[giá trị, hàm set]`; gọi hàm set sẽ khiến component **re-render**.
+  - [ThemeContext.js:19](src/context/ThemeContext.js#L19) `const isDark = themeMode === 'dark';` — cờ boolean tiện dụng suy ra từ `themeMode`.
+  - [ThemeContext.js:22-32](src/context/ThemeContext.js#L22-L32) `const value = useMemo(() => ({...}), [isDark, themeMode]);`
+    - (a) Gói các thứ cần chia sẻ thành 1 object: `themeMode`, `isDark`, `colors`, `toggleTheme`.
+    - (b) **Tại sao `useMemo`?** Giữ cho object `value` có **cùng tham chiếu (reference)** giữa các lần render không liên quan; chỉ tạo object mới khi `isDark`/`themeMode` đổi. Consumer của context re-render khi `value` đổi tham chiếu, nên việc này giúp tránh re-render thừa.
+    - [ThemeContext.js:27](src/context/ThemeContext.js#L27) `colors: isDark ? darkColors : lightColors,` — **chọn bảng màu theo theme**. Toàn app lấy màu từ đây.
+    - [ThemeContext.js:29](src/context/ThemeContext.js#L29) `toggleTheme: () => setThemeMode((current) => (current === 'light' ? 'dark' : 'light')),`
+      - (a) Hàm đảo theme light ↔ dark.
+      - (b) Dùng **updater function** `(current) => ...`: React đưa giá trị mới nhất của state vào `current`, an toàn hơn đọc biến `themeMode` cũ trong closure.
+  - [ThemeContext.js:34](src/context/ThemeContext.js#L34) `return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;`
+    - (a) `Provider` phát `value` xuống mọi component con.
+    - (c) *Provider*: thành phần "phát sóng" giá trị; mọi `useContext(ThemeContext)` bên dưới nhận được `value`.
 
-export function useProfile() { /* ... giống useTheme ... */ }
-```
-
-**Vai trò:** lưu **profile state tạm thời** (đề yêu cầu *"Use `useState` for temporary local profile info"*) và phát cho mọi screen.
-
-**Giải thích:**
-
-- `const [profile, setProfile] = useState(initialProfile);`
-  - **(a) LÀM GÌ:** giữ object `{ name, bio, avatar }` trong state.
-  - **(b) TẠI SAO đặt ở Context chứ không trong screen:** **cả** `ProfileScreen` (đọc để hiển thị) **và** `EditProfileScreen` (ghi để cập nhật) cần cùng một dữ liệu. Nâng state lên Context = "single source of truth". Bản chất vẫn là `useState` đúng như đề, chỉ là đặt ở cấp app.
-  - **Đáp ứng đề:** đây là chỗ thể hiện `useState` cho "temporary local profile info" — *temporary* vì chỉ nằm trong RAM, mất khi reload.
-
-- `updateProfile: (updates) => setProfile((current) => ({ ...current, ...updates }))`
-  - **(a) LÀM GÌ:** trộn (merge) các field mới vào profile cũ.
-  - **(b) TẠI SAO dùng spread `{ ...current, ...updates }`:**
-    - State trong React phải được cập nhật **bất biến (immutable)** — tạo object **mới**, không sửa trực tiếp object cũ. Nếu `current.name = ...` thì tham chiếu không đổi, React có thể không render lại.
-    - `...current` giữ field không sửa (ví dụ `avatar`), `...updates` ghi đè field gửi lên (`name`, `bio`). Nhờ đó gọi `updateProfile({ name, bio })` **không** làm mất `avatar`.
-  - **(c) KHÁI NIỆM — immutable state update:** luôn trả về object/array mới thay vì mutate tại chỗ.
-
-- `useProfile()`: custom hook, giống `useTheme()` về mục đích.
-
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *`ProfileContext` có còn là "local state" không?* → Có. Context chỉ là cơ chế **phân phối**; dữ liệu vẫn nằm trong `useState`. Không có server/DB nào tham gia.
-- *Vì sao `ProfileScreen` tự cập nhật sau khi save?* → Nó là consumer của context (gọi `useProfile()`). Khi `profile` đổi, React render lại nó với dữ liệu mới — không cần gọi API hay refresh tay.
-- *Reload app thì dữ liệu thế nào?* → Quay về `initialProfile`, vì `useState(initialProfile)` chạy lại. Muốn giữ phải thêm AsyncStorage/DB (ngoài phạm vi đề).
+**`useTheme()` — [ThemeContext.js:41-49](src/context/ThemeContext.js#L41-L49)**
+- (a) Custom hook đọc theme: `const context = useContext(ThemeContext);` ([dòng 42](src/context/ThemeContext.js#L42)).
+- (b) Có guard [dòng 44-46](src/context/ThemeContext.js#L44-L46): nếu `context` rỗng (gọi ngoài Provider) → ném `Error` rõ ràng.
+- (c) *Custom hook*: hàm bắt đầu bằng `use...` gói logic hook để tái dùng — ở đây giấu `useContext` + kiểm tra lỗi, nên ở các màn chỉ cần viết `useTheme()` gọn gàng.
 
 ---
 
-## 8. src/navigation/AppNavigator.js — Stack Navigator
+## 4. `src/context/ProfileContext.js` — Context profile
 
-```js
-const Stack = createNativeStackNavigator();
+File: [src/context/ProfileContext.js](src/context/ProfileContext.js) (51 dòng). **Cấu trúc song song hệt ThemeContext, nhưng giữ dữ liệu người dùng.**
 
-export default function AppNavigator() {
-  const { colors, isDark } = useTheme();
-  const navigationTheme = useMemo(() => ({ dark: isDark, colors: { ... }, fonts: { ... } }), [colors, isDark]);
+**Vai trò:** lưu `profile` (name, bio, avatar) và cấp hàm `updateProfile` cho toàn app.
 
-  return (
-    <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator initialRouteName="Home" screenOptions={{ animation: 'slide_from_right', contentStyle: { backgroundColor: colors.background }, headerShown: false }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Profile" component={ProfileScreen} />
-        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
-}
-```
+- [ProfileContext.js:9](src/context/ProfileContext.js#L9) `createContext(undefined)` — như Theme, để bắt lỗi dùng sai.
+- [ProfileContext.js:12-16](src/context/ProfileContext.js#L12-L16) `const initialProfile = {...}`
+  - (a) Giá trị mặc định khi mở app: `name`, `bio`, và `avatar: require('../assets/images/AvatarProfile.png')`.
+  - (b) Dùng `require(...)` để **nạp ảnh tĩnh** (bundle sẵn) — đây là cách RN nhập asset cục bộ.
 
-**Vai trò:** cấu hình **Stack Navigator** — đáp ứng trực tiếp yêu cầu *"Navigation between all screens using Stack Navigator"*.
+**`ProfileProvider({ children })` — [ProfileContext.js:21-36](src/context/ProfileContext.js#L21-L36)**
+- [ProfileContext.js:22](src/context/ProfileContext.js#L22) `const [profile, setProfile] = useState(initialProfile);` — state giữ profile hiện tại.
+- [ProfileContext.js:25-33](src/context/ProfileContext.js#L25-L33) `value = useMemo(...)` gồm `profile` và `updateProfile`.
+  - [ProfileContext.js:30](src/context/ProfileContext.js#L30) `updateProfile: (updates) => setProfile((current) => ({ ...current, ...updates })),`
+    - (a) Nhận `updates` (object phần cần đổi) và **gộp** vào profile cũ.
+    - (b) Dùng **spread `{ ...current, ...updates }`**: giữ nguyên field cũ, ghi đè field mới → gọi `updateProfile({ name, bio })` chỉ đổi name & bio, **giữ nguyên avatar**.
+    - (c) *Cập nhật bất biến (immutable update)*: không sửa trực tiếp object cũ mà tạo object mới — React mới nhận ra state đã đổi để re-render.
 
-**Lướt import:** `useMemo`; `NavigationContainer` (gốc của hệ navigation); `createNativeStackNavigator` (tạo stack chạy bằng native screen); `useTheme`; 4 screen.
-
-**Giải thích:**
-
-- `const Stack = createNativeStackNavigator();`
-  - **(a) LÀM GÌ:** tạo cặp `Stack.Navigator` + `Stack.Screen`.
-  - **(b) TẠI SAO dùng Native Stack:** luồng app có quan hệ **trước/sau** rõ ràng (Home → Profile → Edit/Settings → back). Stack quản lý màn hình theo **ngăn xếp (LIFO)**: `navigate` đẩy lên, `goBack` lấy ra. Bản "native-stack" dùng API điều hướng gốc của iOS/Android nên chuyển cảnh mượt, hiệu năng tốt.
-  - **(c) KHÁI NIỆM — Stack Navigator:** chồng màn hình; màn mới nằm trên, quay lại sẽ pop màn trên cùng.
-
-- `initialRouteName="Home"`
-  - **(a) LÀM GÌ:** chọn Home là màn đầu tiên trong stack. Đúng yêu cầu *HomeScreen welcome the user*.
-
-- 4 `Stack.Screen` với `name` `Home`/`Profile`/`EditProfile`/`Settings`
-  - **(b) TẠI SAO `name` quan trọng:** `navigation.navigate('Profile')` ở screen khác phải khớp **chính xác** chuỗi này. Sai chính tả = lỗi route. Đúng 4 route = đúng phạm vi đề (không có screen thứ 5, không Search).
-
-- `screenOptions={{ headerShown: false, ... }}`
-  - **(a) LÀM GÌ:** ẩn header mặc định của navigation.
-  - **(b) TẠI SAO ẩn:** app tự vẽ header bằng `AppHeader` để kiểm soát hoàn toàn tiêu đề, back button và màu theo theme. `contentStyle.backgroundColor` đặt nền theo theme để tránh "nháy trắng" khi chuyển màn. `animation: 'slide_from_right'` cho hiệu ứng trượt quen thuộc.
-
-- `navigationTheme` + `<NavigationContainer theme={...}>` bọc trong `useMemo`
-  - **(a) LÀM GÌ:** đưa màu theme của app vào *theme của chính React Navigation* (nền container, màu primary, border...).
-  - **(b) TẠI SAO:** để cả những phần do navigation tự vẽ cũng đổi màu theo light/dark, tránh viền trắng lạc tông trong dark mode. `useMemo([colors, isDark])` tạo lại object theme chỉ khi theme đổi.
-
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *Vì sao Stack mà không Bottom Tabs?* → Edit/Settings là màn **con** của Profile theo luồng tuần tự, không phải các khu vực song song; Stack đúng ngữ nghĩa hơn và đề không yêu cầu Tabs.
-- *`navigation` ở đâu ra?* → React Navigation **tự** truyền prop `navigation` cho mỗi component đăng ký là `Stack.Screen` (xem `HomeScreen({ navigation })`).
-- *`goBack()` khác `navigate()`?* → `navigate('X')` tới route tên X; `goBack()` pop màn hiện tại, quay lại đúng instance màn trước trong stack (không tạo mới).
+**`useProfile()` — [ProfileContext.js:42-50](src/context/ProfileContext.js#L42-L50)** — y hệt `useTheme`: đọc context, ném lỗi nếu dùng ngoài Provider, trả `{ profile, updateProfile }`.
 
 ---
 
-## 9. src/screens/HomeScreen.js
+## 5. `src/theme/colors.js` — Bảng màu
 
-```js
-export default function HomeScreen({ navigation }) {
-  const { profile } = useProfile();
-  const { colors } = useTheme();
+File: [src/theme/colors.js](src/theme/colors.js) (34 dòng).
 
-  return (
-    <SafeAreaView edges={[...]} style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <AppHeader title="Profile App" />
-      <ScrollView bounces={false} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.centerArea}>
-          <View style={[styles.card, { backgroundColor: colors.card, shadowColor: colors.shadow }]}>
-            <ProfileCard compact profile={profile} />
-            <AppButton title="View My Profile" onPress={() => navigation.navigate('Profile')} style={styles.cardButton} />
-          </View>
-        </View>
-        <Text style={[styles.footer, { color: colors.textSecondary }]}>Assignment 1 • React Native</Text>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-```
-
-**Vai trò:** màn hình đầu — chào người dùng và điều hướng sang Profile. Đáp ứng *"HomeScreen: Welcome the user and navigate to their profile."*
-
-**Giải thích:**
-
-- `export default function HomeScreen({ navigation })`
-  - **(a) LÀM GÌ:** nhận prop `navigation` từ Stack.
-  - **(c) KHÁI NIỆM — props:** dữ liệu component nhận từ "cha"; ở đây navigation do navigator cấp.
-
-- `const { profile } = useProfile();` / `const { colors } = useTheme();`
-  - **(a) LÀM GÌ:** lấy profile và bảng màu hiện tại qua custom hook.
-  - **(b) TẠI SAO Home cần `profile`:** truyền vào `ProfileCard` để hiển thị avatar trong welcome card.
-
-- `<SafeAreaView edges={['top','right','bottom','left']} style={[styles.safeArea, { backgroundColor: colors.background }]}>`
-  - **(a) LÀM GÌ:** chèn padding để nội dung không bị status bar/notch/home indicator che; nền theo theme.
-  - **(b) TẠI SAO style là một **mảng** `[styles.safeArea, { backgroundColor }]`:** RN cho phép gộp nhiều style; tách phần **tĩnh** (trong `StyleSheet`) khỏi phần **động theo theme** (màu nền). Đây là pattern lặp lại ở mọi screen.
-  - **(c) KHÁI NIỆM — StyleSheet:** `StyleSheet.create({...})` khai báo style một lần, tối ưu hơn object inline rải rác; nhưng màu phụ thuộc theme vẫn phải truyền inline vì đổi lúc runtime.
-
-- `<ScrollView bounces={false} contentContainerStyle={styles.scrollContent}>`
-  - **(a) LÀM GÌ:** cho phép cuộn nếu màn nhỏ/ font lớn; `contentContainerStyle` style cho **nội dung bên trong**, không phải khung ScrollView.
-  - **(b) TẠI SAO:** đảm bảo nút và footer vẫn truy cập được trên thiết bị nhỏ → phục vụ yêu cầu responsive.
-
-- `<AppButton title="View My Profile" onPress={() => navigation.navigate('Profile')} />`
-  - **(a) LÀM GÌ:** bấm nút → điều hướng sang route `Profile`.
-  - **(b) TẠI SAO bọc trong arrow function `() => navigation.navigate(...)`:** để `navigate` chỉ chạy **khi nhấn**, không chạy ngay lúc render. Nếu viết `onPress={navigation.navigate('Profile')}` (gọi luôn) sẽ điều hướng sai thời điểm.
-
-- **Style responsive:** `scrollContent` có `flexGrow: 1`, `maxWidth: 600`, `alignSelf: 'center'`; `centerArea` có `flex: 1, justifyContent: 'center'`.
-  - **(b) TẠI SAO:** `flexGrow: 1` cho nội dung giãn đầy chiều cao để căn giữa theo trục dọc; `maxWidth: 600 + alignSelf: center` giúp trên màn rộng (tablet/web) card không kéo dài quá khổ. Đây là **Flexbox responsive**.
-  - **(c) KHÁI NIỆM — Flexbox:** hệ thống dàn layout của RN. `flex`, `flexGrow`, `justifyContent`, `alignItems`, `flexDirection` quyết định cách con chiếm và căn không gian. RN mặc định `flexDirection: 'column'`.
-
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *App responsive bằng cách nào?* → Flexbox (`flex/flexGrow`), `maxWidth` + `alignSelf: center`, padding theo %, `ScrollView`; không hardcode chiều cao thiết bị.
-- *`SafeAreaView` để làm gì?* → Tránh nội dung bị che bởi tai thỏ/status bar/home indicator.
+**Vai trò:** tập trung toàn bộ mã màu (design tokens) ở 1 nơi.
+- [colors.js:7-19](src/theme/colors.js#L7-L19) `export const lightColors = {...}` — bảng màu theme sáng.
+- [colors.js:21-33](src/theme/colors.js#L21-L33) `export const darkColors = {...}` — bảng màu theme tối.
+- (b) **Tại sao 2 object cùng key?** `ThemeContext` chỉ swap nguyên 1 trong 2 bảng vào `colors` ([ThemeContext.js:27](src/context/ThemeContext.js#L27)). Mọi component viết `colors.primary`, `colors.text`, `colors.background`... Nếu thiếu key ở một bảng thì khi đổi theme sẽ ra `undefined` → lỗi màu. Vì vậy 2 bảng **phải cùng tập key** (`background, card, text, textSecondary, primary, primaryLight, error, border, input, shadow, white`).
 
 ---
 
-## 10. src/screens/ProfileScreen.js
+## 6. `src/navigation/AppNavigator.js` — Điều hướng
 
-```js
-export default function ProfileScreen({ navigation }) {
-  const { profile } = useProfile();
-  const { colors } = useTheme();
-  return (
-    <SafeAreaView ...>
-      <AppHeader title="My Profile" />
-      <ScrollView ...>
-        <View style={[styles.card, ...]}>
-          <ProfileCard profile={profile} />
-        </View>
-        <AppButton icon="create-outline" title="Edit Profile" onPress={() => navigation.navigate('EditProfile')} ... />
-        <AppButton icon="settings-outline" title="Settings" variant="secondary" onPress={() => navigation.navigate('Settings')} ... />
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-```
+File: [src/navigation/AppNavigator.js](src/navigation/AppNavigator.js) (66 dòng).
 
-**Vai trò:** hiển thị **name, avatar, bio** và **nút Edit** — đáp ứng *"ProfileScreen: Display user's name, avatar, short bio, and 'Edit' button."* Ngoài ra có thêm nút Settings.
+**Vai trò:** khai báo 4 màn dạng **stack** và đồng bộ màu của React Navigation với theme.
 
-**Giải thích:**
-- `const { profile } = useProfile();` → lấy dữ liệu để hiển thị.
-- `<ProfileCard profile={profile} />` (không có `compact`)
-  - **(a) LÀM GÌ:** render card **đầy đủ**: avatar lớn, name, bio, các tag.
-  - **(b) TẠI SAO truyền cả object `profile` thay vì từng field:** gọn, và `ProfileCard` tự quyết hiển thị; nếu thêm field sau này không phải sửa chữ ký props.
-- Hai `AppButton`:
-  - Edit Profile dùng mặc định (`variant="primary"`), Settings dùng `variant="secondary"`.
-  - **(b) TẠI SAO khác variant:** phân cấp thị giác — hành động chính (Edit) nổi bật, hành động phụ (Settings) nhẹ hơn. `icon="create-outline"` / `"settings-outline"` là tên icon Ionicons.
+**Import — [AppNavigator.js:6-14](src/navigation/AppNavigator.js#L6-L14):**
+- `useMemo` (react), `NavigationContainer` (gốc chứa toàn bộ navigation), `createNativeStackNavigator` (tạo stack điều hướng), `useTheme`, và 4 screen.
 
-**Đáp ứng đề:** "Edit" button có mặt và dẫn tới `EditProfile`. Avatar hiển thị (qua `ProfileCard` → `Avatar`).
+- [AppNavigator.js:17](src/navigation/AppNavigator.js#L17) `const Stack = createNativeStackNavigator();`
+  - (a) Tạo bộ navigator có `Stack.Navigator` và `Stack.Screen`.
+  - (b) Đặt **ngoài** component để không tạo lại mỗi lần render.
+  - (c) *Stack navigator*: các màn xếp chồng như ngăn xếp; mở màn mới = push lên, back = pop ra.
 
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *Avatar lấy từ đâu?* → Từ `profile.avatar`. Hiện mặc định `null` nên `Avatar` hiển thị **icon person** làm fallback (xem mục 18). App chưa gắn ảnh thật.
-- *Vì sao Home và Profile dùng chung `ProfileCard`?* → Tái sử dụng UI; khác nhau chỉ ở prop `compact`.
+**`AppNavigator()` — [AppNavigator.js:21-65](src/navigation/AppNavigator.js#L21-L65)**
+- [AppNavigator.js:22](src/navigation/AppNavigator.js#L22) `const { colors, isDark } = useTheme();` — lấy màu hiện tại.
+- [AppNavigator.js:25-44](src/navigation/AppNavigator.js#L25-L44) `navigationTheme = useMemo(() => ({...}), [colors, isDark])`
+  - (a) Map bảng `colors` của app sang đúng schema theme mà React Navigation yêu cầu (`dark`, `colors`, `fonts`).
+  - (b) Nhờ vậy nền/khung mặc định của navigation cũng đổi theo theme. `useMemo` chỉ dựng lại object khi `colors/isDark` đổi.
+- [AppNavigator.js:47](src/navigation/AppNavigator.js#L47) `<NavigationContainer theme={navigationTheme}>` — bọc toàn bộ điều hướng.
+- [AppNavigator.js:49-56](src/navigation/AppNavigator.js#L49-L56) `<Stack.Navigator initialRouteName="Home" screenOptions={{...}}>`
+  - `initialRouteName="Home"` → màn đầu là Home.
+  - `headerShown: false` ([dòng 54](src/navigation/AppNavigator.js#L54)) → **tắt header mặc định**; app tự vẽ `AppHeader` riêng.
+  - `animation: 'slide_from_right'` → hiệu ứng trượt khi chuyển màn.
+  - `contentStyle.backgroundColor: colors.background` → nền màn theo theme.
+- [AppNavigator.js:58-61](src/navigation/AppNavigator.js#L58-L61) khai báo 4 `Stack.Screen`:
+  - `name` (`"Home"`, `"Profile"`, `"EditProfile"`, `"Settings"`) là **route name** dùng cho `navigation.navigate(name)`.
+  - `component` là màn tương ứng.
+  - (c) *navigation object*: React Navigation tự **truyền prop `navigation`** vào mỗi screen — đó là lý do các màn có `{ navigation }` để gọi `navigate()` / `goBack()`.
 
 ---
 
-## 11. src/screens/EditProfileScreen.js — Formik + Yup
+## 7. `src/screens/HomeScreen.js`
 
-Đây là màn hình **trọng tâm** về state form & validation. Đáp ứng *"EditProfileScreen: editing of name and bio using controlled inputs"* + *"Validating Forms with Formik and Yup"*.
+File: [src/screens/HomeScreen.js](src/screens/HomeScreen.js) (91 dòng).
 
-### 11.1 Yup schema
+**Vai trò:** màn chính — chào người dùng (ProfileCard bản gọn) + nút sang Profile.
 
-```js
-const profileSchema = Yup.object({
-  name: Yup.string()
-    .test('name-required', 'Name is required.', (value) => Boolean(value?.trim().length))
-    .test('name-min-length', 'Name must be at least 2 characters.',
-      (value) => !value?.trim().length || value.trim().length >= 2),
-  bio: Yup.string().test('bio-required', 'Bio is required.',
-    (value) => Boolean(value?.trim().length)),
-});
-```
-
-- **(a) LÀM GÌ:** khai báo luật: `name` bắt buộc và ≥ 2 ký tự *sau khi trim*; `bio` bắt buộc *sau khi trim*.
-- **(b) TẠI SAO dùng `.test()` với `value.trim()` thay vì `.required().min(2)` chuẩn của Yup:**
-  - `.required()` mặc định coi chuỗi chỉ gồm khoảng trắng (`"   "`) là "có giá trị" (truthy) và `.min(2)` đếm cả khoảng trắng. Vậy `"  "` sẽ **lọt** qua validate.
-  - Dùng `.test()` đọc `value.trim().length` để **loại** chuỗi chỉ-khoảng-trắng và đếm độ dài **thực**. Đây là lý do kỹ thuật chính.
-  - `value?.trim()` dùng optional chaining để an toàn khi `value` là `undefined`.
-  - Điều kiện min: `!value?.trim().length || value.trim().length >= 2` — nếu rỗng thì **bỏ qua** test min (để test required báo lỗi, tránh hiện 2 lỗi cùng lúc).
-- **(c) KHÁI NIỆM — schema validation:** tách luật kiểm tra ra khỏi UI; Formik nhận schema và tự ánh xạ lỗi về đúng field `name`/`bio`.
-
-> Lưu ý trung thực: `name` **không** giới hạn độ dài tối đa trong schema; chỉ `bio` bị giới hạn ở tầng input bằng `maxLength={220}` (xem dưới). Không bắt buộc theo đề, nhưng nên biết.
-
-### 11.2 Formik
-
-```js
-<Formik
-  initialValues={{ name: profile.name, bio: profile.bio }}
-  validateOnBlur
-  validateOnChange={false}
-  validationSchema={profileSchema}
-  onSubmit={(values, { setSubmitting }) => {
-    updateProfile({ name: values.name.trim(), bio: values.bio.trim() });
-    setSubmitting(false);
-    navigation.goBack();
-  }}
->
-  {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => ( ... )}
-</Formik>
-```
-
-- `initialValues={{ name: profile.name, bio: profile.bio }}`
-  - **(a) LÀM GÌ:** nạp profile hiện tại làm giá trị khởi đầu cho form.
-  - **(b) TẠI SAO:** người dùng thấy dữ liệu cũ để chỉnh, không phải gõ lại từ đầu.
-
-- `validateOnChange={false}` + `validateOnBlur`
-  - **(a) LÀM GÌ:** **không** validate sau mỗi ký tự; chỉ validate khi input **mất focus (blur)** và khi **submit**.
-  - **(b) TẠI SAO — rất quan trọng cho tiếng Việt:** bộ gõ tiếng Việt ghép dấu qua nhiều bước (composition). Nếu validate/biến đổi liên tục theo từng phím, trải nghiệm gõ dấu dễ lỗi. Hoãn validate tới blur/submit cho phép gõ xong rồi mới kiểm.
-
-- `onSubmit` chạy khi form **hợp lệ**:
-  1. `updateProfile({ name: values.name.trim(), bio: values.bio.trim() })` — lưu vào ProfileContext, **trim** hai đầu.
-  2. `setSubmitting(false)` — kết thúc trạng thái đang submit.
-  3. `navigation.goBack()` — quay lại Profile.
-  - **(b) TẠI SAO trim ở **submit** mà không phải lúc gõ:** lúc submit người dùng đã gõ xong, trim chỉ dọn khoảng trắng thừa hai đầu, **không** can thiệp vào quá trình ghép dấu. Trim trong `onChangeText` mới là cái gây lỗi gõ tiếng Việt — code cố tình tránh.
-
-- **Render props** `{({ ... }) => (<JSX/>)}`
-  - **(c) KHÁI NIỆM — render prop:** Formik truyền các công cụ (`values`, `errors`, `touched`, `handleChange`, `handleBlur`, `handleSubmit`, `isSubmitting`) qua một **hàm con**, để JSX bên trong dùng. Nhờ đó screen không phải tự tạo `useState` cho từng field.
-
-### 11.3 Controlled inputs
-
-```js
-<FormInput
-  error={touched.name ? errors.name : undefined}
-  label="Name"
-  onBlur={handleBlur('name')}
-  onChangeText={handleChange('name')}
-  value={values.name}
-  ...
-/>
-```
-
-- `value={values.name}` + `onChangeText={handleChange('name')}`
-  - **(c) KHÁI NIỆM — controlled input:** giá trị hiển thị của `TextInput` đến từ **state** (`values.name` của Formik), và mỗi thay đổi đi qua handler để cập nhật state. UI luôn = state. Đây chính là yêu cầu *"controlled inputs"* của đề.
-  - **(b) TẠI SAO `handleChange('name')`:** Formik tạo sẵn handler ghi đúng vào field `name`, đỡ viết tay.
-
-- `error={touched.name ? errors.name : undefined}`
-  - **(a) LÀM GÌ:** chỉ truyền lỗi xuống khi field đã **touched** (đã từng focus rồi rời).
-  - **(b) TẠI SAO:** tránh "mắng" người dùng lỗi ngay khi chưa kịp gõ. `touched` cho biết người dùng đã tương tác field hay chưa.
-
-- Bio có thêm `multiline` và `maxLength={220}`
-  - **(b) TẠI SAO:** bio dài nhiều dòng; `maxLength` chặn cứng độ dài ở tầng nhập để bio không quá khổ.
-
-### 11.4 KeyboardAvoidingView + ScrollView
-
-```js
-<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardArea}>
-  ...
-  <ScrollView keyboardShouldPersistTaps="handled" ...>
-```
-
-- **(a) LÀM GÌ:** trên iOS đẩy nội dung lên khi bàn phím mở để input không bị che; `keyboardShouldPersistTaps="handled"` cho phép bấm nút trong khi bàn phím đang hiện.
-- **(b) TẠI SAO `behavior` khác nhau theo `Platform.OS`:** Android tự xử lý insets bàn phím khác iOS; đặt `'padding'` cho iOS, `undefined` cho Android là cấu hình phổ biến để tránh layout giật.
-
-### 11.5 Hai nút Save / Cancel
-
-```js
-<AppButton loading={isSubmitting} title="Save Changes" onPress={handleSubmit} />
-<AppButton title="Cancel" variant="secondary" onPress={navigation.goBack} ... />
-```
-
-- `onPress={handleSubmit}` → kích hoạt validate → nếu hợp lệ chạy `onSubmit`.
-- `loading={isSubmitting}` → hiện spinner và khóa nút khi đang submit (chặn double submit).
-- Cancel gọi thẳng `navigation.goBack` (không lưu).
-
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *Vì sao dùng Formik thay vì nhiều `useState`?* → Formik gom values/touched/errors/submit về một chỗ, giảm boilerplate; vẫn là local state.
-- *Yup validate khi nào?* → Khi blur và submit (do `validateOnChange={false}`), không phải mỗi ký tự.
-- *Vì sao `.test()` chứ không `.required().min(2)`?* → Để loại chuỗi chỉ-khoảng-trắng và đếm độ dài sau `trim`; `.required()`/`.min()` mặc định không trim.
-- *Controlled input là gì trong file này?* → `value` lấy từ `values.name`, đổi qua `handleChange`; UI luôn đồng bộ state.
-- *Khi nhập tiếng Việt có mất dấu không?* → Không, vì không trim/normalize trong `onChangeText` và `validateOnChange={false}`.
+- [HomeScreen.js:17](src/screens/HomeScreen.js#L17) `export default function HomeScreen({ navigation })` — nhận prop `navigation` từ navigator.
+- [HomeScreen.js:18-19](src/screens/HomeScreen.js#L18-L19) `useProfile()` lấy `profile`, `useTheme()` lấy `colors`.
+- [HomeScreen.js:22](src/screens/HomeScreen.js#L22) `<SafeAreaView edges={[...]} style={[styles.safeArea, { backgroundColor: colors.background }]}>`
+  - (a) `SafeAreaView` né tai thỏ/status bar; nền lấy `colors.background`.
+  - (c) *StyleSheet & style mảng*: `style={[a, b]}` gộp nhiều style; phần `{ backgroundColor: colors.x }` là style động theo theme đặt **sau** để ghi đè.
+- [HomeScreen.js:23](src/screens/HomeScreen.js#L23) `<AppHeader title="Profile App" />` — **không** truyền `onBack` ⇒ Home không có nút back (đúng vì là màn gốc).
+- [HomeScreen.js:39](src/screens/HomeScreen.js#L39) `<ProfileCard compact profile={profile} />` — bản gọn (lời chào).
+- [HomeScreen.js:41-45](src/screens/HomeScreen.js#L41-L45) `<AppButton title="View My Profile" onPress={() => navigation.navigate('Profile')} ... />`
+  - (a) Bấm nút → `navigation.navigate('Profile')` đẩy sang màn Profile.
+  - (c) *navigate(routeName)*: chuyển tới route đã khai báo trong `AppNavigator`.
 
 ---
 
-## 12. src/screens/SettingsScreen.js
+## 8. `src/screens/ProfileScreen.js`
 
-**Vai trò:** màn hình **Theme toggle (Light/Dark)** — đáp ứng *"SettingsScreen: Theme toggle (Light/Dark)"*. Gồm hai phần: APPEARANCE (chứa `ThemeToggleSwitch`) và THEME PREVIEW.
+File: [src/screens/ProfileScreen.js](src/screens/ProfileScreen.js) (82 dòng).
 
-**Giải thích đáng chú ý:**
+**Vai trò:** xem profile đầy đủ + 2 nút sang EditProfile và Settings.
 
-- `const { colors, isDark } = useTheme();` → đọc theme để vẽ preview.
-- `<ThemeToggleSwitch />` — component đảm nhiệm việc bật/tắt (mục 14). Screen **không** tự xử lý logic toggle → tách trách nhiệm.
-- Theme Preview:
-  - `Ionicons name={isDark ? 'moon' : 'sunny'}` — icon đổi theo theme.
-  - Text `{isDark ? 'Dark Mode' : 'Light Mode'}` — nhãn động.
-- **Swatches (dải màu mẫu):**
-  ```js
-  {[colors.primary, colors.primaryLight, colors.background, colors.border].map((color, index) => (
-    <View key={`${color}-${index}`} style={[styles.swatch, { backgroundColor: color, borderColor: colors.border }]} />
-  ))}
-  ```
-  - **(a) LÀM GÌ:** render 4 ô màu của palette hiện tại.
-  - **(b) TẠI SAO `.map(...)` + `key`:** render danh sách động từ mảng. **`key`** giúp React nhận diện từng phần tử khi cập nhật, tránh vẽ lại sai. Vì giá trị màu có thể trùng giữa các theme nên key dùng `color + index` cho ổn định.
-  - **(c) KHÁI NIỆM — render list bằng map + key:** cách chuẩn để biến mảng dữ liệu thành nhiều element.
-- **Minh chứng theme là toàn cục:** dòng "This preview updates instantly across every screen" + footer "Theme managed with Context API" — preview đổi tức thì cùng cả app vì cùng đọc một Context.
-
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *Toggle ở đây ảnh hưởng tới đâu?* → Toàn app: nền, card, text, button, border, NavigationContainer, StatusBar, và chính preview này — vì tất cả đọc `colors` từ ThemeContext.
-- *Vì sao cần `key` trong `.map`?* → Để React diff danh sách chính xác và tránh cảnh báo/bug khi list thay đổi.
+- [ProfileScreen.js:17-19](src/screens/ProfileScreen.js#L17-L19) nhận `navigation`, lấy `profile` (useProfile), `colors` (useTheme).
+- [ProfileScreen.js:23](src/screens/ProfileScreen.js#L23) `<AppHeader title="My Profile" />` — vẫn không có back (vào từ Home, back bằng cử chỉ/Android back).
+- [ProfileScreen.js:31](src/screens/ProfileScreen.js#L31) `<ProfileCard profile={profile} />` — **không** truyền `compact` ⇒ bản đầy đủ (avatar lớn + name + bio + tags). **Đây là nơi giá trị name/bio mới sau khi Edit được hiển thị.**
+- [ProfileScreen.js:35-40](src/screens/ProfileScreen.js#L35-L40) `AppButton "Edit Profile"` → `navigation.navigate('EditProfile')`.
+- [ProfileScreen.js:42-48](src/screens/ProfileScreen.js#L42-L48) `AppButton "Settings"` `variant="secondary"` → `navigation.navigate('Settings')`.
 
 ---
 
-## 13. src/components/ProfileCard.js — **reusable component (đề yêu cầu đích danh)**
+## 9. `src/screens/EditProfileScreen.js`
 
-```js
-const tags = ['Student', 'Mobile App', 'Dark Mode Ready'];
+File: [src/screens/EditProfileScreen.js](src/screens/EditProfileScreen.js) (200 dòng). **Màn phức tạp nhất — Formik + Yup. Đọc kỹ cho PHẦN 3.**
 
-export default function ProfileCard({ profile, compact = false }) {
-  const { colors } = useTheme();
-  if (compact) {
-    return ( <View style={styles.compactContent}> <Avatar source={profile.avatar} size={108} subtle /> ...Welcome... </View> );
-  }
-  return ( <View style={styles.profileContent}> <Avatar source={profile.avatar} size={132} /> {profile.name} {profile.bio} ...tags... </View> );
-}
-```
+**Vai trò:** sửa name/bio, validate, lưu vào ProfileContext rồi quay lại.
 
-**Vai trò:** **`ProfileCard`** — đúng tên đề liệt kê làm ví dụ reusable component.
+**Import — [EditProfileScreen.js:6-16](src/screens/EditProfileScreen.js#L6-L16):**
+- `KeyboardAvoidingView`, `Platform` — đẩy nội dung lên khi bàn phím hiện.
+- `Formik` — quản lý state form. `* as Yup` — tạo schema validate.
+- `AppButton`, `AppHeader`, `Avatar`, `FormInput`, `useProfile`, `useTheme`.
 
-**Giải thích:**
-- `function ProfileCard({ profile, compact = false })`
-  - **(a) LÀM GÌ:** nhận `profile` và cờ `compact` (mặc định `false`).
-  - **(c) KHÁI NIỆM — default props value:** `compact = false` đặt giá trị mặc định ngay khi destructuring props.
-- **Hai nhánh render theo `compact`:**
-  - `compact === true` (Home): avatar 108, tiêu đề "Welcome Back!" + mô tả → welcome card.
-  - `compact === false` (Profile): avatar 132, `profile.name`, `profile.bio`, và 3 tag.
-  - **(b) TẠI SAO một component hai chế độ thay vì hai component:** Home và Profile cùng "khái niệm hiển thị hồ sơ" nhưng bố cục hơi khác. Gộp vào một component + cờ `compact` giúp **tái sử dụng**, giữ style đồng nhất, tránh copy JSX. Đây là minh chứng cụ thể cho tiêu chí *reusable components*.
-  - **(c) KHÁI NIỆM — conditional rendering:** trả về JSX khác nhau tùy điều kiện.
-- **Tags bằng `.map`:** danh sách tĩnh `tags`, mỗi tag một "pill" màu `primaryLight`. `key={tag}` vì các tag là duy nhất.
+**`profileSchema` (Yup) — [EditProfileScreen.js:20-36](src/screens/EditProfileScreen.js#L20-L36)**
+- (a) Định nghĩa **quy tắc hợp lệ** cho `name` và `bio`.
+- (b) Đặt ngoài component để khỏi tạo lại mỗi render.
+- Chi tiết:
+  - [EditProfileScreen.js:23](src/screens/EditProfileScreen.js#L23) `.test('name-required', 'Name is required.', (value) => Boolean(value?.trim().length))`
+    - name **bắt buộc**: rỗng hoặc toàn khoảng trắng → lỗi.
+  - [EditProfileScreen.js:24-29](src/screens/EditProfileScreen.js#L24-L29) `.test('name-min-length', 'Name must be at least 2 characters.', (value) => !value?.trim().length || value.trim().length >= 2)`
+    - name tối thiểu **2 ký tự** (sau khi `trim`). Vế `!value?.trim().length ||` bỏ qua kiểm tra khi rỗng → tránh hiện **2 lỗi cùng lúc** (đã có lỗi "required").
+  - [EditProfileScreen.js:31-35](src/screens/EditProfileScreen.js#L31-L35) `bio: Yup.string().test('bio-required', 'Bio is required.', ...)` — bio bắt buộc.
+- **Lưu ý chính xác:** code **không dùng** `.required()` / `.min()` mặc định mà tự viết bằng `.test()` để kiểm tra trên giá trị đã **`trim()`** (loại khoảng trắng thừa). Khi thầy hỏi, nên nói đúng điều này.
+- (c) *validationSchema*: object Yup mô tả ràng buộc; Formik dùng nó để tự sinh `errors`.
 
-> Lưu ý trung thực: 3 tag (`Student`, `Mobile App`, `Dark Mode Ready`) là **chuỗi tĩnh trang trí**, không lấy từ profile. Đây là nội dung UI, không phải dữ liệu người dùng — nên không cần (và không có) trong model profile.
+**`EditProfileScreen({ navigation })` — [EditProfileScreen.js:41-141](src/screens/EditProfileScreen.js#L41-L141)**
+- [EditProfileScreen.js:42](src/screens/EditProfileScreen.js#L42) `const { profile, updateProfile } = useProfile();` — lấy data hiện tại + hàm lưu.
+- [EditProfileScreen.js:47](src/screens/EditProfileScreen.js#L47) `<AppHeader title="Edit Profile" onBack={navigation.goBack} />` — **có** `onBack` ⇒ hiện nút back.
+- [EditProfileScreen.js:48-51](src/screens/EditProfileScreen.js#L48-L51) `KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}`
+  - (a) Trên iOS dùng `'padding'`; Android để `undefined`.
+  - (b) iOS bàn phím che ô nhập nên cần đẩy; Android xử lý sẵn nên không cần.
 
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *`ProfileCard` tái sử dụng ở đâu?* → Home (`compact`) và Profile (đầy đủ).
-- *Vì sao truyền `profile` thay vì `name`, `bio` riêng?* → Gọn và dễ mở rộng; component tự lấy field cần.
+**`<Formik>` — [EditProfileScreen.js:52-65](src/screens/EditProfileScreen.js#L52-L65)**
+- [EditProfileScreen.js:54](src/screens/EditProfileScreen.js#L54) `initialValues={{ name: profile.name, bio: profile.bio }}` — nạp giá trị hiện tại làm điểm xuất phát của form.
+- [EditProfileScreen.js:56-57](src/screens/EditProfileScreen.js#L56-L57) `validateOnBlur` (validate khi rời ô) + `validateOnChange={false}` (**không** validate mỗi lần gõ → đỡ làm phiền).
+- [EditProfileScreen.js:58](src/screens/EditProfileScreen.js#L58) `validationSchema={profileSchema}` — gắn schema Yup.
+- [EditProfileScreen.js:60-64](src/screens/EditProfileScreen.js#L60-L64) `onSubmit={(values, { setSubmitting }) => {...}}`
+  - (a) Chỉ chạy **khi dữ liệu hợp lệ**: `updateProfile({ name: values.name.trim(), bio: values.bio.trim() })` → `setSubmitting(false)` → `navigation.goBack()`.
+  - (b) `trim()` để lưu sạch khoảng trắng; `goBack()` đóng màn, quay lại Profile.
 
----
+**Render-props của Formik — [EditProfileScreen.js:74-82](src/screens/EditProfileScreen.js#L74-L82)**
+- (a) Formik truyền vào 1 object gồm `errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values`.
+- (c) *Render props*: Formik nhận **một function con** và gọi nó với state/handlers để bạn dựng UI.
 
-## 14. src/components/ThemeToggleSwitch.js — **reusable component (đề yêu cầu đích danh)**
+**Ô nhập — [EditProfileScreen.js:107-126](src/screens/EditProfileScreen.js#L107-L126)** (xem chi tiết controlled input ở PHẦN 3)
+- FormInput "Name": `error={touched.name ? errors.name : undefined}` ([108](src/screens/EditProfileScreen.js#L108)), `onBlur={handleBlur('name')}` ([110](src/screens/EditProfileScreen.js#L110)), `onChangeText={handleChange('name')}` ([111](src/screens/EditProfileScreen.js#L111)), `value={values.name}` ([114](src/screens/EditProfileScreen.js#L114)).
+  - **Chỉ hiện lỗi khi `touched`** → không báo đỏ ngay khi vừa mở form.
+- FormInput "Bio": tương tự, thêm `maxLength={220}` ([120](src/screens/EditProfileScreen.js#L120)) và `multiline` ([121](src/screens/EditProfileScreen.js#L121)).
 
-```js
-export default function ThemeToggleSwitch() {
-  const { colors, isDark, toggleTheme } = useTheme();
-  return (
-    <View style={styles.row}>
-      <View style={[styles.iconBox, ...]}><Ionicons name={isDark ? 'moon' : 'sunny'} .../></View>
-      <View style={styles.copy}><Text>Dark Mode</Text><Text>{isDark ? 'Dark theme is active' : 'Use a darker color palette'}</Text></View>
-      <Switch onValueChange={toggleTheme} value={isDark} trackColor={{ false: colors.border, true: colors.primary }} thumbColor={colors.white} .../>
-    </View>
-  );
-}
-```
-
-**Vai trò:** **`ThemeToggleSwitch`** — đúng tên đề liệt kê. Đóng gói toàn bộ UI + hành vi bật/tắt theme.
-
-**Giải thích:**
-- Component **không nhận props** — tự lấy `isDark`, `colors`, `toggleTheme` từ `useTheme()`.
-  - **(b) TẠI SAO tự đọc context thay vì nhận props từ Settings:** giúp `SettingsScreen` chỉ cần `<ThemeToggleSwitch />`, không phải biết chi tiết logic theme. Đóng gói (encapsulation) tốt.
-- `<Switch value={isDark} onValueChange={toggleTheme} />`
-  - **(a) LÀM GÌ:** `value={isDark}` cho switch phản ánh trạng thái hiện tại; gạt switch gọi `onValueChange={toggleTheme}` để lật theme.
-  - **(c) KHÁI NIỆM — `Switch` là controlled component:** trạng thái bật/tắt do `value` (state) quyết định, không tự giữ trạng thái nội bộ.
-- `trackColor`, `thumbColor`, `ios_backgroundColor` lấy từ theme → switch cũng đổi màu theo light/dark.
-
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *Vì sao toggle nằm trong component riêng?* → Reusable + tách trách nhiệm khỏi screen; nếu cần đặt toggle ở chỗ khác, chỉ việc gắn lại component.
-- *Switch lấy trạng thái từ đâu?* → `value={isDark}` từ ThemeContext, là controlled component.
+**Nút hành động — [EditProfileScreen.js:129-134](src/screens/EditProfileScreen.js#L129-L134)**
+- [EditProfileScreen.js:131](src/screens/EditProfileScreen.js#L131) `<AppButton loading={isSubmitting} title="Save Changes" onPress={handleSubmit} />` — bấm → `handleSubmit` (validate rồi mới `onSubmit`).
+- [EditProfileScreen.js:133](src/screens/EditProfileScreen.js#L133) `<AppButton title="Cancel" ... onPress={navigation.goBack} />` — hủy, quay lại **không lưu**.
 
 ---
 
-## 15. src/components/FormInput.js
+## 10. `src/screens/SettingsScreen.js`
 
-```js
-export default function FormInput({ label, error, multiline = false, ...inputProps }) {
-  const { colors } = useTheme();
-  const hasError = Boolean(error);
-  return (
-    <View style={styles.field}>
-      <Text style={[styles.label, ...]}>{label}</Text>
-      <View style={[styles.inputShell, multiline && styles.multilineShell, { borderColor: hasError ? colors.error : colors.border, ... }]}>
-        <TextInput {...inputProps} autoCapitalize="none" autoCorrect={false} multiline={multiline} ... />
-        {hasError && !multiline ? <Ionicons name="alert-circle-outline" .../> : null}
-      </View>
-      {hasError ? <Text style={[styles.error, ...]}>{error}</Text> : null}
-    </View>
-  );
-}
-```
+File: [src/screens/SettingsScreen.js](src/screens/SettingsScreen.js) (131 dòng).
 
-**Vai trò:** reusable input — gói label + TextInput + viền + icon lỗi + dòng lỗi. Dùng cho cả Name và Bio.
+**Vai trò:** bật/tắt Dark Mode + xem trước (preview) màu theme. **Liên quan trực tiếp PHẦN 2.**
 
-**Giải thích quan trọng:**
-- `function FormInput({ label, error, multiline = false, ...inputProps })`
-  - **(c) KHÁI NIỆM — rest props (`...inputProps`):** gom **mọi** prop còn lại (như `value`, `onChangeText`, `onBlur`, `placeholder`, `maxLength`, `returnKeyType`) vào một object rồi rải xuống `<TextInput {...inputProps} />`.
-  - **(b) TẠI SAO làm vậy:** `FormInput` không cần biết trước từng prop của TextInput; nó "trong suốt" chuyển các prop Formik (value/onChangeText/onBlur) xuống. Đây là điều giúp nó hoạt động như **controlled input**.
-- **Không trim/normalize trong khi gõ:** file chỉ chuyển `onChangeText` thẳng từ Formik, **không** chèn regex/replace/trim.
-  - **(b) TẠI SAO:** giữ nguyên chuỗi từ bàn phím để **không phá ghép dấu tiếng Việt** và không nhảy con trỏ. (Liên hệ với `validateOnChange={false}` ở Edit Profile.)
-- `autoCorrect={false}`, `autoCapitalize="none"`
-  - **(b) TẠI SAO:** tránh hệ điều hành tự sửa/viết hoa làm sai tên/bio người dùng nhập.
-- `borderColor: hasError ? colors.error : colors.border`
-  - **(a) LÀM GÌ:** viền đỏ khi có lỗi → phản hồi trực quan.
-- Icon lỗi chỉ hiện khi `hasError && !multiline`
-  - **(b) TẠI SAO loại multiline:** ô bio cao nhiều dòng, đặt icon cảnh báo bên cạnh dễ chồng chữ; nên bio chỉ hiện **dòng lỗi** bên dưới, không hiện icon. (Chi tiết thiết kế có chủ đích.)
-- `{hasError ? <Text>{error}</Text> : null}`
-  - **(c) KHÁI NIỆM — conditional rendering với `? :` và `null`:** trả `null` để **không render gì** khi không có lỗi.
-
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *`...inputProps` để làm gì?* → Chuyển toàn bộ props Formik (value/onChangeText/onBlur...) xuống TextInput mà không liệt kê từng cái.
-- *Vì sao không xử lý chuỗi khi gõ?* → Bảo toàn ghép dấu tiếng Việt và vị trí con trỏ.
+- [SettingsScreen.js:17-18](src/screens/SettingsScreen.js#L17-L18) nhận `navigation`, lấy `colors, isDark` từ `useTheme()`.
+- [SettingsScreen.js:22](src/screens/SettingsScreen.js#L22) `<AppHeader title="Settings" onBack={navigation.goBack} />` — có nút back.
+- [SettingsScreen.js:26](src/screens/SettingsScreen.js#L26) `<ThemeToggleSwitch />` — công tắc đổi theme (logic nằm trong component này).
+- [SettingsScreen.js:31-40](src/screens/SettingsScreen.js#L31-L40) khối **THEME PREVIEW**:
+  - [SettingsScreen.js:33](src/screens/SettingsScreen.js#L33) `<Ionicons name={isDark ? 'moon' : 'sunny'} ... />` — icon đổi theo theme.
+  - [SettingsScreen.js:36](src/screens/SettingsScreen.js#L36) nhãn `{isDark ? 'Dark Mode' : 'Light Mode'}`.
+  - [SettingsScreen.js:43-48](src/screens/SettingsScreen.js#L43-L48) `[colors.primary, colors.primaryLight, colors.background, colors.border].map((color, index) => <View key={...} .../>)`
+    - (a) Render 4 ô màu mẫu của theme hiện tại.
+    - (b) `key={`${color}-${index}`}` ghép màu + index để **key luôn duy nhất**, kể cả khi 2 màu trùng nhau.
+    - (c) *key trong list*: React cần `key` ổn định/duy nhất để theo dõi từng phần tử khi render danh sách.
 
 ---
 
-## 16. src/components/AppButton.js
+## 11. `src/components/AppHeader.js`
 
-```js
-export default function AppButton({ title, onPress, variant = 'primary', icon, disabled = false, loading = false, style }) {
-  const { colors } = useTheme();
-  const isPrimary = variant === 'primary';
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={title} disabled={disabled || loading} onPress={onPress}
-      style={({ pressed }) => [ styles.button, { backgroundColor: isPrimary ? colors.primary : colors.primaryLight, opacity: disabled ? 0.55 : pressed ? 0.86 : 1 }, style ]}>
-      {loading ? <ActivityIndicator .../> : (<> {icon ? <Ionicons .../> : null} <Text>{title}</Text> </>)}
-    </Pressable>
-  );
-}
-```
+File: [src/components/AppHeader.js](src/components/AppHeader.js) (72 dòng).
 
-**Vai trò:** nút chuẩn hóa toàn app: hai `variant`, icon, trạng thái `disabled`/`loading`/`pressed`, màu theo theme.
+**Vai trò:** thanh tiêu đề dùng chung (app tự vẽ vì navigator đã `headerShown:false`).
 
-**Giải thích:**
-- `<Pressable>` thay vì `Button`/`TouchableOpacity`
-  - **(b) TẠI SAO:** `Pressable` cho phép style theo trạng thái nhấn qua hàm `style={({ pressed }) => [...]}` (đổi `opacity` khi đang nhấn), linh hoạt hơn `Button` mặc định vốn khó tùy biến.
-- `disabled={disabled || loading}`
-  - **(b) TẠI SAO gộp:** khi đang loading cũng phải khóa nút để tránh nhấn nhiều lần (double submit) — đúng với nút Save ở Edit Profile.
-- `{loading ? <ActivityIndicator/> : (<>icon + text</>)}`
-  - **(a) LÀM GÌ:** đang loading thì hiện spinner thay cho nội dung.
-- `accessibilityRole="button"`, `accessibilityLabel={title}`
-  - **(b) TẠI SAO:** hỗ trợ screen reader → app dễ tiếp cận hơn (accessibility).
-- Prop `style` cuối mảng style
-  - **(b) TẠI SAO đặt cuối:** cho phép screen ghi đè/đắp thêm (ví dụ `marginTop`) mà không phá style gốc — thứ tự sau thắng.
-
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *Vì sao tách `AppButton`?* → Sửa một nơi, mọi nút đổi theo; giữ giao diện nhất quán; giảm lặp.
-- *`variant` để làm gì?* → Phân biệt hành động chính/phụ mà không viết lại style.
+- [AppHeader.js:16](src/components/AppHeader.js#L16) `AppHeader({ title, onBack })` — props: tiêu đề + callback back (tùy chọn).
+- [AppHeader.js:23-33](src/components/AppHeader.js#L23-L33) `{onBack ? (<Pressable ... onPress={onBack}>...) : null}`
+  - (a) **Chỉ render nút back khi có `onBack`**. Home/Profile không truyền → không nút.
+  - (c) *Conditional rendering*: `điều_kiện ? <JSX/> : null` để hiện/ẩn phần tử.
+- [AppHeader.js:36-38](src/components/AppHeader.js#L36-L38) `<Text numberOfLines={1} ...>{title}</Text>` — tiêu đề 1 dòng (cắt nếu dài).
+- [AppHeader.js:41](src/components/AppHeader.js#L41) `<View style={styles.side} />` — View rỗng cùng bề rộng vùng trái để tiêu đề **căn giữa tuyệt đối**.
 
 ---
 
-## 17. src/components/AppHeader.js
+## 12. `src/components/Avatar.js`
 
-```js
-export default function AppHeader({ title, onBack }) {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.header}>
-      <View style={styles.side}>{onBack ? <Pressable onPress={onBack} ...><Ionicons name="arrow-back" .../></Pressable> : null}</View>
-      <Text numberOfLines={1} style={[styles.title, ...]}>{title}</Text>
-      <View style={styles.side} />
-    </View>
-  );
-}
-```
+File: [src/components/Avatar.js](src/components/Avatar.js) (57 dòng).
 
-**Vai trò:** header tự thiết kế cho cả 4 screen (vì `headerShown: false`). Hiển thị tiêu đề ở giữa và back button tùy chọn.
+**Vai trò:** ảnh đại diện hình tròn; thiếu ảnh thì hiện icon người.
 
-**Giải thích:**
-- `onBack` là **prop tùy chọn**:
-  - Home không truyền → không có nút back (đúng, Home là gốc stack).
-  - Edit/Settings truyền `onBack={navigation.goBack}` → hiện mũi tên, nhấn để pop.
-  - **(b) TẠI SAO điều kiện `onBack ? ... : null`:** một component header dùng cho cả màn có và không có back.
-- **Layout 3 cột bằng Flexbox:** hai `View style={styles.side}` (rộng 44) hai bên + `Text` ở giữa `flex: 1, textAlign: 'center'`.
-  - **(b) TẠI SAO có một `side` trống bên phải:** để tiêu đề căn **chính giữa** đối xứng — cột trái (back) và cột phải (trống) cùng rộng 44, nên title không bị lệch khi có back button. Đây là tiểu xảo layout cân đối.
-- `numberOfLines={1}` trên title → tiêu đề dài không xuống dòng, bị cắt gọn.
-
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *Back button xử lý thế nào?* → Screen truyền `navigation.goBack` qua `onBack`; có prop thì render mũi tên và gọi callback.
-- *Vì sao tự vẽ header?* → `headerShown: false` để kiểm soát hoàn toàn style và đồng bộ theme.
+- [Avatar.js:16](src/components/Avatar.js#L16) `Avatar({ source, size = 116, subtle = false })` — props với **default value** (`size`, `subtle`).
+- [Avatar.js:19](src/components/Avatar.js#L19) `const borderWidth = subtle ? 4 : 5;` — viền mảnh khi `subtle`.
+- [Avatar.js:29](src/components/Avatar.js#L29) `borderRadius: size / 2,` — bo tròn nửa cạnh ⇒ hình tròn hoàn hảo.
+- [Avatar.js:36-41](src/components/Avatar.js#L36-L41) `{source ? <Image .../> : <Ionicons name="person" size={size * 0.64} .../>}`
+  - (a) Có ảnh → `Image`; không → icon `person` cỡ ~64% đường kính (fallback).
 
 ---
 
-## 18. src/components/Avatar.js
+## 13. `src/components/ProfileCard.js`
 
-```js
-export default function Avatar({ source, size = 116, subtle = false }) {
-  const { colors } = useTheme();
-  const borderWidth = subtle ? 4 : 5;
-  return (
-    <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2, borderWidth, borderColor: subtle ? colors.primaryLight : colors.primary, backgroundColor: colors.primaryLight }]}>
-      {source ? <Image source={source} resizeMode="cover" style={styles.image} /> : <Ionicons name="person" size={size * 0.64} color={colors.primary} />}
-    </View>
-  );
-}
-```
+File: [src/components/ProfileCard.js](src/components/ProfileCard.js) (108 dòng).
 
-**Vai trò:** hiển thị avatar tròn; có ảnh thì render `Image`, chưa có thì render icon `person` làm **fallback**. Dùng ở Home, Profile, Edit Profile.
+**Vai trò:** khối hiển thị profile, **dùng lại ở 2 ngữ cảnh** qua prop `compact`.
 
-**Giải thích:**
-- `borderRadius: size / 2` → bo tròn hoàn hảo bất kể `size`.
-  - **(c) KHÁI NIỆM — bo tròn:** `borderRadius` bằng nửa cạnh của hình vuông tạo hình tròn.
-- `{source ? <Image .../> : <Ionicons name="person" .../>}`
-  - **(a) LÀM GÌ:** chọn ảnh thật hay icon mặc định.
-  - **(b) TẠI SAO cần fallback:** `profile.avatar` hiện là `null`, nên luôn rơi vào nhánh icon. Có fallback giúp UI không vỡ khi chưa có ảnh; nếu sau này gán `source` hợp lệ, component tự render ảnh — **mở rộng được**.
-- `size={size * 0.64}` cho icon → icon co giãn theo kích thước avatar (tỉ lệ nhất quán).
-- `subtle` đổi độ dày/màu viền → biến thể nhẹ dùng ở welcome card và Edit Profile.
-
-> **Lưu ý trung thực (quan trọng):** vì `avatar` luôn `null`, app **chưa bao giờ hiển thị ảnh thật** — luôn là icon person. Đề yêu cầu *"Display user's avatar"*; app đáp ứng ở mức **placeholder/fallback**, chưa có ảnh người dùng và không có chức năng đổi ảnh (đề chỉ cho sửa Name/Bio). Xem mục Điểm yếu.
-
-**Câu hỏi giảng viên có thể hỏi & gợi ý trả lời:**
-- *Avatar hiện là gì?* → Icon `person` (fallback) vì chưa gán ảnh; code đã sẵn sàng render `Image` nếu có `source`.
-- *Vì sao không cho đổi avatar?* → Đề chỉ yêu cầu chỉnh Name và Bio.
+- [ProfileCard.js:12](src/components/ProfileCard.js#L12) `const tags = ['Student', 'Mobile App', 'Dark Mode Ready'];` — danh sách tag tĩnh.
+- [ProfileCard.js:19](src/components/ProfileCard.js#L19) `ProfileCard({ profile, compact = false })`.
+- [ProfileCard.js:23-33](src/components/ProfileCard.js#L23-L33) `if (compact) { return (...) }`
+  - (a) **Early return**: chế độ gọn (lời chào "Welcome Back!") cho màn Home.
+  - (c) *Early return*: thoát hàm sớm với 1 nhánh UI, giúp tách rõ 2 biến thể.
+- [ProfileCard.js:36-50](src/components/ProfileCard.js#L36-L50) nhánh đầy đủ:
+  - [39](src/components/ProfileCard.js#L39) `{profile.name}`, [40](src/components/ProfileCard.js#L40) `{profile.bio}` — **hiển thị data thật từ Context** (đây là lý do sau khi Edit, Profile đổi theo).
+  - [43-47](src/components/ProfileCard.js#L43-L47) `{tags.map((tag) => <View key={tag} ...>...)}` — render từng chip; `key={tag}` vì các tag duy nhất.
 
 ---
 
-## 19. Bảng map tiêu chí chấm điểm
+## 14. `src/components/AppButton.js`
 
-| Yêu cầu của đề | Đáp ứng ở đâu | Bằng cách nào |
-| --- | --- | --- |
-| **HomeScreen**: welcome + điều hướng tới profile | [HomeScreen.js](src/screens/HomeScreen.js) | Welcome card (`ProfileCard compact`) + `AppButton` gọi `navigation.navigate('Profile')` |
-| **ProfileScreen**: name, avatar, bio, nút Edit | [ProfileScreen.js](src/screens/ProfileScreen.js) + [ProfileCard.js](src/components/ProfileCard.js) | `ProfileCard` hiển thị `profile.name`/`bio` + `Avatar`; `AppButton` "Edit Profile" |
-| **EditProfileScreen**: sửa name/bio bằng controlled inputs | [EditProfileScreen.js](src/screens/EditProfileScreen.js) | `FormInput` với `value={values.x}` + `onChangeText={handleChange('x')}` |
-| **SettingsScreen**: toggle Light/Dark | [SettingsScreen.js](src/screens/SettingsScreen.js) + [ThemeToggleSwitch.js](src/components/ThemeToggleSwitch.js) | `Switch` gọi `toggleTheme()` |
-| **Stack Navigator** + điều hướng giữa 4 screen | [AppNavigator.js](src/navigation/AppNavigator.js) | `createNativeStackNavigator`, 4 `Stack.Screen`, `navigate`/`goBack` |
-| **useState** cho local profile (temporary) | [ProfileContext.js](src/context/ProfileContext.js) | `useState(initialProfile)`; chỉ trong RAM |
-| **Context API** | [ProfileContext.js](src/context/ProfileContext.js), [ThemeContext.js](src/context/ThemeContext.js) | `createContext` + `Provider` + `useContext` |
-| **custom ThemeContext** (light/dark) | [ThemeContext.js](src/context/ThemeContext.js) | `ThemeProvider` giữ `themeMode`, phát `colors`/`toggleTheme` |
-| **Styling** bằng StyleSheet hoặc Styled-Components | tất cả screen/component | **`StyleSheet.create`** (không dùng styled-components — đề cho phép "hoặc") |
-| **Validation** Formik + Yup | [EditProfileScreen.js](src/screens/EditProfileScreen.js) | `<Formik validationSchema={profileSchema}>` + `Yup.object({...})` |
-| **Reusable components** (ProfileCard, ThemeToggleSwitch) | [components/](src/components/) | `ProfileCard`, `ThemeToggleSwitch` (+ `AppButton`, `AppHeader`, `FormInput`, `Avatar`) |
-| **Different color themes app-wide** | [colors.js](src/theme/colors.js) + ThemeContext | mọi component đọc `colors` qua `useTheme()`; NavigationContainer + StatusBar cũng đổi |
-| **Responsive layout** bằng Flexbox | tất cả screen | `flex`, `flexGrow`, `flexDirection`, `maxWidth`, `alignSelf`, `ScrollView`, `KeyboardAvoidingView` |
+File: [src/components/AppButton.js](src/components/AppButton.js) (94 dòng).
 
-**Kết luận:** **tất cả** yêu cầu chức năng và UX/UI của đề đều có chỗ đáp ứng trong code.
+**Vai trò:** nút bấm dùng chung, 2 biến thể primary/secondary, hỗ trợ icon/loading/disabled.
+
+- [AppButton.js:21-29](src/components/AppButton.js#L21-L29) props: `title, onPress, variant='primary', icon, disabled=false, loading=false, style`.
+- [AppButton.js:32](src/components/AppButton.js#L32) `const isPrimary = variant === 'primary';` — cờ chọn màu.
+- [AppButton.js:38](src/components/AppButton.js#L38) `disabled={disabled || loading}` — đang loading thì cũng khóa bấm (tránh submit 2 lần).
+- [AppButton.js:40-50](src/components/AppButton.js#L40-L50) `style={({ pressed }) => [...]}`
+  - (a) `Pressable` cho phép **style theo trạng thái**: hàm nhận `{ pressed }`.
+  - [44-45](src/components/AppButton.js#L44-L45) màu nền/viền theo `isPrimary`.
+  - [47](src/components/AppButton.js#L47) `opacity: disabled ? 0.55 : pressed ? 0.86 : 1` — phản hồi thị giác khi disabled/nhấn.
+  - (c) *Pressable*: component cảm ứng linh hoạt thay cho `TouchableOpacity` cũ.
+- [AppButton.js:52-69](src/components/AppButton.js#L52-L69) `{loading ? <ActivityIndicator .../> : (<>icon + Text</>)}`
+  - Loading → spinner; ngược lại → (icon nếu có) + `title`.
 
 ---
 
-## 20. Điểm yếu & hạn chế (trung thực)
+## 15. `src/components/FormInput.js`
 
-Những điểm dưới đây **không sai theo đề**, nhưng nên biết để bảo vệ bài và để giảng viên thấy em hiểu giới hạn:
+File: [src/components/FormInput.js](src/components/FormInput.js) (102 dòng). **Quan trọng cho controlled input ở PHẦN 3.**
 
-1. **Avatar luôn là icon fallback, không có ảnh thật.** `profile.avatar = null` cố định và không có chức năng chọn ảnh. Yêu cầu "display user's avatar" được đáp ứng ở mức **placeholder**. → Nếu muốn mạnh hơn: thêm một ảnh trong `src/assets/images` và set `avatar: require(...)`, hoặc dùng `expo-image-picker`.
+**Vai trò:** ô nhập có label + báo lỗi, bọc `TextInput`.
 
-2. **Không persistence — dữ liệu mất khi reload.** State chỉ trong RAM. Đúng phạm vi đề (chỉ yêu cầu local state), nhưng là giới hạn thực tế. → Nâng cấp: `AsyncStorage`.
-
-3. **Styling chỉ dùng `StyleSheet`, không dùng Styled-Components.** Đề ghi "StyleSheet *hoặc* Styled-Components" nên hợp lệ; chỉ cần nói rõ là **lựa chọn có chủ đích** (gọn, không thêm dependency).
-
-4. **`name` không có giới hạn độ dài tối đa** (chỉ `bio` có `maxLength={220}`). Không bắt buộc, nhưng nếu bị hỏi "name dài vô hạn được không" thì đây là sự thật.
-
-5. **Validation chỉ ở một form (Edit Profile).** Đó cũng là form duy nhất của app, nên không thiếu — nhưng cần nói rõ phạm vi.
-
-6. **Theme không lưu và không theo hệ điều hành.** Toggle reset về `light` sau reload (do `useState('light')`), và không đọc `useColorScheme()` của thiết bị. Đề không yêu cầu, nhưng là điểm có thể nâng cấp.
-
-7. **`SettingsScreen` được điều hướng từ Profile** (không phải mục đề liệt kê tường minh trong "Screens" ngoài 4 screen). Thực ra Settings **là** 1 trong 4 screen đề yêu cầu, nên điều này đúng — chỉ lưu ý luồng là Profile → Settings.
-
-> Nếu giảng viên hỏi "điểm yếu của bài?", trả lời mục 1 và 2 trước (avatar placeholder, không persistence) là trung thực và thể hiện hiểu bài.
+- [FormInput.js:17](src/components/FormInput.js#L17) `FormInput({ label, error, multiline = false, ...inputProps })`
+  - (a) Tách riêng `label`, `error`, `multiline`; **gom phần còn lại vào `...inputProps`**.
+  - (c) *Rest props (`...inputProps`)*: gói mọi prop khác (`value`, `onChangeText`, `onBlur`, `placeholder`, `maxLength`...) thành 1 object để chuyển thẳng cho `TextInput`.
+- [FormInput.js:20](src/components/FormInput.js#L20) `const hasError = Boolean(error);` — ép `error` (string | undefined) về boolean.
+- [FormInput.js:33](src/components/FormInput.js#L33) `borderColor: hasError ? colors.error : colors.border` — viền đỏ khi lỗi.
+- [FormInput.js:37-49](src/components/FormInput.js#L37-L49) `<TextInput {...inputProps} ... />`
+  - (a) **Trải `inputProps` lên TextInput** — đây là chỗ `value`/`onChangeText` từ Formik thực sự gắn vào ô, tạo nên **controlled input**.
+- [FormInput.js:51-53](src/components/FormInput.js#L51-L53) icon cảnh báo chỉ hiện khi `hasError && !multiline`.
+- [FormInput.js:56](src/components/FormInput.js#L56) `{hasError ? <Text ...>{error}</Text> : null}` — dòng mô tả lỗi.
 
 ---
 
-## 21. 5 điểm cần nắm chắc nhất
+## 16. `src/components/ThemeToggleSwitch.js`
 
-1. **Luồng khởi động & vì sao tách `AppContent`.** `index.js → App → SafeAreaProvider → ThemeProvider → ProfileProvider → AppNavigator`. `AppContent` phải nằm **trong** `ThemeProvider` thì `useTheme()` mới chạy — component render ra provider thì ở ngoài, không đọc được context của chính nó.
+File: [src/components/ThemeToggleSwitch.js](src/components/ThemeToggleSwitch.js) (72 dòng). **Điểm châm ngòi luồng đổi theme — đọc kỹ cho PHẦN 2.**
 
-2. **Context API + custom ThemeContext giải quyết prop drilling.** State đặt **trên** navigator nên mọi screen chia sẻ; component đọc qua `useTheme()`/`useProfile()`. Khi context value đổi (dùng `useMemo` để tránh đổi thừa), React render lại mọi consumer → cả app đổi màu/đổi profile cùng lúc.
+**Vai trò:** hàng UI có `Switch` để bật/tắt Dark Mode.
 
-3. **Profile = `useState` trong Context, cập nhật bất biến.** `updateProfile` dùng `setProfile((cur) => ({ ...cur, ...updates }))` — tạo object mới, giữ field cũ (avatar), ghi đè field mới (name/bio). Dữ liệu temporary, mất khi reload.
+- [ThemeToggleSwitch.js:16](src/components/ThemeToggleSwitch.js#L16) `const { colors, isDark, toggleTheme } = useTheme();` — lấy cả **hàm `toggleTheme`** từ context.
+- [ThemeToggleSwitch.js:22](src/components/ThemeToggleSwitch.js#L22) `<Ionicons name={isDark ? 'moon' : 'sunny'} ... />` — icon theo theme.
+- [ThemeToggleSwitch.js:31-40](src/components/ThemeToggleSwitch.js#L31-L40) `<Switch ...>`
+  - [35](src/components/ThemeToggleSwitch.js#L35) `onValueChange={toggleTheme}` — **gạt Switch → gọi `toggleTheme`** (đảo state theme trong Provider).
+  - [39](src/components/ThemeToggleSwitch.js#L39) `value={isDark}` — Switch là **controlled component**, trạng thái luôn khớp `isDark`.
+  - (c) *Controlled component*: `value` do state điều khiển, `onValueChange` báo ý định đổi; bản thân Switch không tự giữ trạng thái.
 
-4. **Form: Formik giữ values + Yup validate; controlled inputs.** `value={values.x}` + `onChangeText={handleChange('x')}`. `validateOnChange={false}` + không trim khi gõ → bảo toàn gõ tiếng Việt; chỉ **trim khi submit**. Yup dùng `.test()` với `value.trim()` để loại chuỗi chỉ-khoảng-trắng (lý do không dùng `.required()/.min()` mặc định).
+---
 
-5. **Stack Navigator + reusable components + Flexbox responsive.** `createNativeStackNavigator`, 4 route, `navigate`/`goBack`. UI tách thành `ProfileCard`, `ThemeToggleSwitch`, `AppButton`, `AppHeader`, `FormInput`, `Avatar`. Responsive bằng `flex/flexGrow`, `maxWidth + alignSelf: center`, `ScrollView`, `KeyboardAvoidingView` — không hardcode kích thước thiết bị.
-```
+# PHẦN 2 — DEEP DIVE: Luồng đổi Theme (Light/Dark)
+
+> 3 câu thầy hay hỏi, kèm **bằng chứng file:dòng**.
+
+### Câu 1 — "Đổi theme NHƯ THẾ NÀO?" (truy từ lúc bấm)
+
+Trình tự khi người dùng gạt công tắc ở màn Settings:
+
+1. **Người dùng gạt `Switch`** trong `ThemeToggleSwitch` (được render bởi Settings tại [SettingsScreen.js:26](src/screens/SettingsScreen.js#L26)).
+   `Switch` có `value={isDark}` và `onValueChange={toggleTheme}` — [ThemeToggleSwitch.js:35](src/components/ThemeToggleSwitch.js#L35) & [:39](src/components/ThemeToggleSwitch.js#L39).
+2. **`toggleTheme` chạy** — định nghĩa tại [ThemeContext.js:29](src/context/ThemeContext.js#L29):
+   `setThemeMode((current) => (current === 'light' ? 'dark' : 'light'))`.
+3. **State `themeMode` đổi** ([ThemeContext.js:18](src/context/ThemeContext.js#L18)) ⇒ `ThemeProvider` **re-render**.
+4. Khi re-render: `isDark` tính lại ([:19](src/context/ThemeContext.js#L19)); `useMemo` thấy dependency `[isDark, themeMode]` đổi nên **tạo `value` mới**, trong đó `colors` được chọn lại: `isDark ? darkColors : lightColors` ([:27](src/context/ThemeContext.js#L27)).
+5. **`value` mới** được phát qua `<ThemeContext.Provider value={value}>` ([:34](src/context/ThemeContext.js#L34)).
+6. **Mọi component gọi `useTheme()`** (Home, Profile, Settings, AppHeader, AppButton, Avatar, FormInput, ProfileCard, AppNavigator...) nhận `colors` mới và **re-render với màu mới** → cả app đổi màu "ngay lập tức".
+
+> Tóm tắt 1 câu: *Bấm Switch → `toggleTheme` → `setThemeMode` đổi state → Provider phát `colors` mới → tất cả consumer re-render đổi màu.*
+
+### Câu 2 — "Nó HOẠT ĐỘNG RA SAO?" (cơ chế Context + re-render)
+
+- **`createContext`** tạo một "kênh" dữ liệu ([ThemeContext.js:11](src/context/ThemeContext.js#L11)).
+- **`ThemeProvider` bọc toàn app** ở [App.js:36-40](App.js#L36-L40), nên *mọi* màn nằm dưới nó.
+- Mỗi màn **đọc theme bằng `useContext`** (gói trong `useTheme`, [ThemeContext.js:41-49](src/context/ThemeContext.js#L41-L49)). Ví dụ Home đọc tại [HomeScreen.js:19](src/screens/HomeScreen.js#L19).
+- **Vì sao đổi 1 chỗ mà MỌI màn đổi theo?** React quy định: component dùng `useContext(X)` sẽ **re-render mỗi khi `value` của Provider X đổi** (so sánh tham chiếu bằng `Object.is`). Khi `themeMode` đổi, `useMemo` tạo `value` **mới về tham chiếu** ⇒ tất cả consumer re-render. Vì màu đến từ object `colors` chung này, đổi 1 state ⇒ đồng bộ toàn app.
+- **Vai trò `useMemo`** ([:22-32](src/context/ThemeContext.js#L22-L32)): giữ `value` **ổn định tham chiếu** giữa các render *không* liên quan tới theme, tránh re-render thừa cho consumer. Khi theme thật sự đổi thì nó chủ động tạo `value` mới để kích hoạt cập nhật.
+
+### Câu 3 — "Dùng CÔNG NGHỆ GÌ?"
+
+- **React Context API**: `createContext` ([:11](src/context/ThemeContext.js#L11)), `<ThemeContext.Provider>` ([:34](src/context/ThemeContext.js#L34)), `useContext` ([:42](src/context/ThemeContext.js#L42)).
+- **`useState`** giữ theme hiện tại (`themeMode`) ([:18](src/context/ThemeContext.js#L18)).
+- **`useMemo`** memo hóa `value` ([:22](src/context/ThemeContext.js#L22)).
+- **Object theme (design tokens)**: `lightColors` / `darkColors` ([colors.js:7](src/theme/colors.js#L7) & [:21](src/theme/colors.js#L21)).
+- **Vì sao chọn Context thay vì truyền props?** Theme cần ở **rất nhiều tầng** (mọi screen + mọi component con). Nếu truyền `colors` qua props thì phải xâu chuỗi qua từng cấp — gọi là **prop drilling**, dài dòng và dễ sai. Context cho phép component **lấy thẳng** giá trị bất kể nằm sâu bao nhiêu, lại đảm bảo một nguồn sự thật duy nhất.
+
+---
+
+# PHẦN 3 — DEEP DIVE: Luồng Edit Profile
+
+> File trung tâm: [EditProfileScreen.js](src/screens/EditProfileScreen.js).
+
+### Câu 1 — "Edit NHƯ THẾ NÀO?" (controlled input)
+
+Ô Name/Bio là **controlled input** — giá trị hiển thị do **Formik `values`** điều khiển, không phải do TextInput tự giữ.
+
+Vòng lặp dữ liệu khi gõ vào ô Name:
+1. TextInput hiển thị `value={values.name}` — truyền từ [EditProfileScreen.js:114](src/screens/EditProfileScreen.js#L114) vào `FormInput`, rồi `FormInput` trải xuống `TextInput` qua `{...inputProps}` ([FormInput.js:38](src/components/FormInput.js#L38)).
+2. Người dùng gõ → `TextInput` gọi `onChangeText` = `handleChange('name')` ([EditProfileScreen.js:111](src/screens/EditProfileScreen.js#L111)).
+3. `handleChange('name')` (của Formik) **cập nhật `values.name`** trong state nội bộ của Formik.
+4. Formik re-render → `values.name` mới chảy ngược lại `value` của ô → màn hình hiển thị ký tự vừa gõ.
+   ⇒ Đây chính là cơ chế **controlled input**: *state là nguồn sự thật, UI chỉ phản chiếu state.*
+- `onBlur={handleBlur('name')}` ([:110](src/screens/EditProfileScreen.js#L110)) đánh dấu `touched.name = true` khi rời ô; kết hợp `validateOnBlur` ([:56](src/screens/EditProfileScreen.js#L56)) → validate khi rời ô.
+- Lỗi chỉ hiển thị khi đã chạm: `error={touched.name ? errors.name : undefined}` ([:108](src/screens/EditProfileScreen.js#L108)). `FormInput` nhận `error` này để tô viền đỏ + hiện dòng lỗi ([FormInput.js:33](src/components/FormInput.js#L33), [:56](src/components/FormInput.js#L56)).
+
+### Câu 2 — "LƯU và HIỂN THỊ RA SAO?"
+
+1. Bấm **Save Changes** → `onPress={handleSubmit}` ([EditProfileScreen.js:131](src/screens/EditProfileScreen.js#L131)).
+2. `handleSubmit` (Formik) **chạy validate** theo `validationSchema={profileSchema}` ([:58](src/screens/EditProfileScreen.js#L58)).
+   - Nếu **không hợp lệ**: `errors` được điền, **`onSubmit` KHÔNG chạy** → dữ liệu xấu không bao giờ được lưu.
+   - Nếu **hợp lệ**: chạy `onSubmit` ([:60-64](src/screens/EditProfileScreen.js#L60-L64)).
+3. Trong `onSubmit`: `updateProfile({ name: values.name.trim(), bio: values.bio.trim() })` ([:61](src/screens/EditProfileScreen.js#L61)).
+4. `updateProfile` ([ProfileContext.js:30](src/context/ProfileContext.js#L30)) gọi `setProfile((current) => ({ ...current, ...updates }))` → **cập nhật state `profile`** trong `ProfileProvider` (merge, **giữ nguyên avatar**).
+5. `setSubmitting(false)` rồi `navigation.goBack()` ([:62-63](src/screens/EditProfileScreen.js#L62-L63)) → đóng màn Edit, quay lại **ProfileScreen**.
+6. **Vì sao ProfileScreen hiện giá trị mới?** ProfileScreen đọc `profile` bằng `useProfile()` ([ProfileScreen.js:18](src/screens/ProfileScreen.js#L18)). Khi `profile` đổi, `ProfileContext` phát `value` mới → ProfileScreen **re-render**, truyền `profile` mới vào `ProfileCard` ([ProfileScreen.js:31](src/screens/ProfileScreen.js#L31)), nơi hiển thị `profile.name`/`profile.bio` ([ProfileCard.js:39-40](src/components/ProfileCard.js#L39-L40)).
+
+> **Dữ liệu KHÔNG truyền qua `navigation` params.** Nó được lưu vào **shared state (ProfileContext)**. Đó là lý do màn Profile thấy ngay giá trị mới mà không cần truyền tham số khi `goBack`. (Nói rõ điểm này nếu thầy hỏi "có dùng navigation để truyền data không?")
+
+### Câu 3 — "Dùng CÔNG NGHỆ GÌ?"
+
+- **Formik** — quản lý state form:
+  - `initialValues` ([:54](src/screens/EditProfileScreen.js#L54)), `values` ([:114](src/screens/EditProfileScreen.js#L114)/[:125](src/screens/EditProfileScreen.js#L125)),
+  - `handleChange` ([:111](src/screens/EditProfileScreen.js#L111)/[:123](src/screens/EditProfileScreen.js#L123)), `handleBlur` ([:110](src/screens/EditProfileScreen.js#L110)/[:122](src/screens/EditProfileScreen.js#L122)),
+  - `errors`/`touched` ([:108](src/screens/EditProfileScreen.js#L108)/[:118](src/screens/EditProfileScreen.js#L118)), `isSubmitting` ([:131](src/screens/EditProfileScreen.js#L131)), `onSubmit` ([:60](src/screens/EditProfileScreen.js#L60)).
+- **Yup** — `validationSchema`: `Yup.object`/`Yup.string` + các `.test()` cho name (required + min 2) và bio (required) ([:20-36](src/screens/EditProfileScreen.js#L20-L36)). *Lưu ý: tự viết bằng `.test()` trên giá trị `trim()`, không dùng `.required()/.min()` mặc định.*
+- **Lưu trữ bằng `useState` + Context**: `ProfileContext` (`useState(initialProfile)` [ProfileContext.js:22](src/context/ProfileContext.js#L22), `updateProfile` [:30](src/context/ProfileContext.js#L30)).
+- **Vì sao validate được TRƯỚC khi lưu?** Vì `handleSubmit` chạy validate dựa trên `validationSchema` **trước**, và `onSubmit` (nơi gọi `updateProfile`) **chỉ được Formik gọi khi không còn lỗi**. Logic lưu nằm trong `onSubmit` nên dữ liệu chắc chắn đã hợp lệ mới được ghi vào Context.
+
+---
+
+# CÂU HỎI GIẢNG VIÊN CÓ THỂ HỎI & GỢI Ý TRẢ LỜI
+
+> Học thuộc **ý chính** (in đậm), phần còn lại để diễn giải.
+
+### A. Nhóm câu về Theme
+
+**1. "Bật Dark Mode thì chuyện gì xảy ra?"**
+> Gạt `Switch` gọi **`toggleTheme`** ([ThemeContext.js:29](src/context/ThemeContext.js#L29)) → **`setThemeMode`** đổi state → `ThemeProvider` re-render, chọn lại **`colors = isDark ? darkColors : lightColors`** ([:27](src/context/ThemeContext.js#L27)) → phát `value` mới → **mọi component dùng `useTheme()` re-render** đổi màu.
+
+**2. "Tại sao đổi 1 chỗ mà tất cả màn đổi màu?"**
+> Vì dùng **Context API**: `ThemeProvider` bọc toàn app ([App.js:36](App.js#L36)), các màn đọc bằng `useContext`. Theo cơ chế React, **consumer re-render mỗi khi `value` của Provider đổi tham chiếu**. Một nguồn state (`themeMode`) → đồng bộ tất cả.
+
+**3. "Sao không truyền màu bằng props?"**
+> Sẽ bị **prop drilling** — phải xâu `colors` qua từng tầng component. Context tránh điều đó, cho component lấy thẳng dù nằm sâu, và giữ **một nguồn sự thật duy nhất**.
+
+**4. "`useMemo` trong ThemeContext để làm gì?"**
+> Memo hóa object `value` để **ổn định tham chiếu**, tránh tạo object mới (và re-render consumer) ở những render không đổi theme; chỉ tạo mới khi `[isDark, themeMode]` đổi.
+
+**5. "Vì sao phải tách `AppContent` ra khỏi `App`?"**
+> Vì `useTheme()` chỉ chạy được **bên trong** `ThemeProvider`. `App` nằm ngoài Provider; `AppContent` ([App.js:16](App.js#L16)) nằm trong nên mới gọi được hook để set màu `StatusBar`.
+
+**6. "Mặc định context là `undefined` để làm gì?"**
+> Để **bắt lỗi dùng sai**: nếu gọi `useTheme()`/`useProfile()` ngoài Provider, code ném `Error` rõ ràng ([ThemeContext.js:44-46](src/context/ThemeContext.js#L44-L46)).
+
+### B. Nhóm câu về Edit Profile
+
+**7. "Controlled input là gì? Ô Name hoạt động sao?"**
+> **State là nguồn sự thật, UI phản chiếu state.** Ô có `value={values.name}` và `onChangeText={handleChange('name')}` — gõ → `handleChange` cập nhật `values.name` (Formik) → re-render → ô hiển thị giá trị mới. (Bằng chứng: [EditProfileScreen.js:111](src/screens/EditProfileScreen.js#L111),[:114](src/screens/EditProfileScreen.js#L114); [FormInput.js:38](src/components/FormInput.js#L38).)
+
+**8. "Bấm Save thì dữ liệu đi đâu?"**
+> `handleSubmit` → validate bằng Yup → nếu hợp lệ, `onSubmit` gọi **`updateProfile({name, bio})`** ([:61](src/screens/EditProfileScreen.js#L61)) → `setProfile` merge vào **ProfileContext** → `goBack()`. Dữ liệu lưu ở **shared state**, không qua navigation params.
+
+**9. "Sao quay lại Profile thấy ngay tên mới?"**
+> ProfileScreen đọc `profile` qua **`useProfile()`** ([ProfileScreen.js:18](src/screens/ProfileScreen.js#L18)). `profile` đổi → context phát value mới → ProfileScreen re-render, `ProfileCard` hiển thị `profile.name/bio` mới.
+
+**10. "Validate bằng gì? Đảm bảo sao không lưu dữ liệu rỗng?"**
+> **Yup `validationSchema`** ([:20-36](src/screens/EditProfileScreen.js#L20-L36)): name bắt buộc + ≥ 2 ký tự, bio bắt buộc (kiểm tra trên giá trị đã `trim`). `handleSubmit` validate **trước**; `onSubmit` (chỗ lưu) **chỉ chạy khi không còn lỗi** → dữ liệu rỗng/ngắn không bao giờ được ghi.
+
+**11. "Vì sao lỗi không hiện ngay khi mở form?"**
+> Vì chỉ truyền `error` khi **`touched`**: `touched.name ? errors.name : undefined` ([:108](src/screens/EditProfileScreen.js#L108)). Thêm `validateOnChange={false}` ([:57](src/screens/EditProfileScreen.js#L57)) nên không validate lúc đang gõ; chỉ validate khi rời ô (`validateOnBlur`).
+
+**12. "Avatar có bị mất khi lưu name/bio không?"**
+> Không. `updateProfile` **merge** `{ ...current, ...updates }` ([ProfileContext.js:30](src/context/ProfileContext.js#L30)) và `onSubmit` chỉ gửi `name`, `bio` → `avatar` giữ nguyên.
+
+### C. Nhóm câu về Navigation & cấu trúc
+
+**13. "Chuyển màn bằng gì?"**
+> **React Navigation (native stack)**. Mỗi screen nhận prop `navigation`; dùng `navigation.navigate('TênRoute')` để mở (vd [HomeScreen.js:43](src/screens/HomeScreen.js#L43)) và `navigation.goBack()` để quay lại ([EditProfileScreen.js:63](src/screens/EditProfileScreen.js#L63)). Route khai báo ở [AppNavigator.js:58-61](src/navigation/AppNavigator.js#L58-L61).
+
+**14. "Sao header tự vẽ mà không dùng header của navigation?"**
+> Đã tắt bằng `headerShown: false` ([AppNavigator.js:54](src/navigation/AppNavigator.js#L54)) để chủ động về giao diện; app dùng `AppHeader` riêng, hiện nút back tùy có truyền `onBack` hay không.
+
+**15. "Tại sao có cả `SafeAreaProvider`?"**
+> Để né tai thỏ/status bar. `SafeAreaProvider` ở [App.js:34](App.js#L34) và các màn dùng `SafeAreaView` (vd [HomeScreen.js:22](src/screens/HomeScreen.js#L22)).
+
+---
+
+*Hết.* Trước buổi bảo vệ, nên chạy `npm start` (hoặc `npx expo start`) để mở app thật, vừa ôn vừa thao tác minh hoạ: bật Dark Mode ở Settings và sửa tên ở Edit Profile để thấy đúng như mô tả ở PHẦN 2 và PHẦN 3.

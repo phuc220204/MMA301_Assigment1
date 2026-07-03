@@ -1,3 +1,8 @@
+/**
+ * SettingsScreen.js — Màn cài đặt (route 'Settings').
+ * Vai trò: cho bật/tắt Dark Mode qua ThemeToggleSwitch và xem trước (preview) màu của theme
+ * đang chọn. Mọi thay đổi theme phản ánh tức thì nhờ Context API.
+ */
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,6 +11,9 @@ import AppHeader from '../components/AppHeader';
 import ThemeToggleSwitch from '../components/ThemeToggleSwitch';
 import { useTheme } from '../context/ThemeContext';
 
+// SettingsScreen: màn cài đặt giao diện.
+// Props: navigation — dùng goBack() cho nút back trên header.
+// Trả về: khu vực bật Dark Mode + khu vực preview theme.
 export default function SettingsScreen({ navigation }) {
   const { colors, isDark } = useTheme();
 
@@ -21,6 +29,7 @@ export default function SettingsScreen({ navigation }) {
         <Text style={[styles.sectionLabel, styles.previewLabel, { color: colors.textSecondary }]}>THEME PREVIEW</Text>
         <View style={[styles.card, styles.previewCard, { backgroundColor: colors.card, shadowColor: colors.shadow }]}>
           <View style={[styles.previewIcon, { backgroundColor: colors.primaryLight }]}>
+            {/* Icon preview đổi theo theme: dark -> mặt trăng, light -> mặt trời */}
             <Ionicons name={isDark ? 'moon' : 'sunny'} size={32} color={colors.primary} />
           </View>
           <Text style={[styles.previewTitle, { color: colors.text }]}>
@@ -30,6 +39,7 @@ export default function SettingsScreen({ navigation }) {
             This preview updates instantly across every screen in the app.
           </Text>
           <View style={styles.swatches}>
+            {/* Render 4 ô màu mẫu từ theme hiện tại; key ghép color+index để chắc chắn duy nhất kể cả khi trùng màu */}
             {[colors.primary, colors.primaryLight, colors.background, colors.border].map((color, index) => (
               <View
                 key={`${color}-${index}`}

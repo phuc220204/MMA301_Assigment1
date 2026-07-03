@@ -1,14 +1,25 @@
+/**
+ * AppHeader.js — Thanh tiêu đề (header) dùng chung trên đầu mỗi màn.
+ * Vai trò: hiển thị tiêu đề ở giữa, kèm nút back bên trái (chỉ khi có onBack).
+ * App tự vẽ header này vì navigator đã tắt header mặc định (headerShown:false).
+ */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../context/ThemeContext';
 
+// AppHeader: header tái sử dụng.
+// Props:
+//   - title: tiêu đề màn hình.
+//   - onBack: callback nút quay lại (thường là navigation.goBack). Nếu KHÔNG truyền -> ẩn nút back.
+// Trả về: 1 hàng gồm [vùng trái: nút back] - [tiêu đề] - [vùng phải rỗng để cân giữa].
 export default function AppHeader({ title, onBack }) {
   const { colors } = useTheme();
 
   return (
     <View style={styles.header}>
       <View style={styles.side}>
+        {/* Chỉ render nút back khi có onBack; màn gốc (Home) không truyền nên không có nút */}
         {onBack ? (
           <Pressable
             accessibilityRole="button"
@@ -26,6 +37,7 @@ export default function AppHeader({ title, onBack }) {
         {title}
       </Text>
 
+      {/* View rỗng cùng bề rộng với vùng trái để tiêu đề luôn nằm chính giữa */}
       <View style={styles.side} />
     </View>
   );

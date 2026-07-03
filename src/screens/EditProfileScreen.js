@@ -1,3 +1,8 @@
+/**
+ * EditProfileScreen.js — Màn chỉnh sửa profile (route 'EditProfile').
+ * Vai trò: dùng Formik quản lý form + Yup để validate name/bio; khi lưu hợp lệ thì gọi
+ * updateProfile (ProfileContext) rồi quay lại màn trước. KeyboardAvoidingView tránh bàn phím che ô nhập.
+ */
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Formik } from 'formik';
@@ -10,14 +15,19 @@ import FormInput from '../components/FormInput';
 import { useProfile } from '../context/ProfileContext';
 import { useTheme } from '../context/ThemeContext';
 
+// profileSchema: quy tắc validate của Yup cho form (định nghĩa ngoài component để khỏi tạo lại mỗi render).
+// Dùng .test() tự viết thay cho .required()/.min() để kiểm tra trên giá trị đã trim (loại khoảng trắng thừa).
 const profileSchema = Yup.object({
   name: Yup.string()
+    // name bắt buộc: rỗng hoặc toàn khoảng trắng -> lỗi 'Name is required.'
     .test('name-required', 'Name is required.', (value) => Boolean(value?.trim().length))
     .test(
       'name-min-length',
       'Name must be at least 2 characters.',
+      // Chỉ kiểm tra độ dài tối thiểu khi name có nhập (rỗng đã do rule trên xử lý) -> tránh báo 2 lỗi cùng lúc.
       (value) => !value?.trim().length || value.trim().length >= 2
     ),
+  // bio bắt buộc: rỗng hoặc toàn khoảng trắng -> lỗi 'Bio is required.'
   bio: Yup.string().test(
     'bio-required',
     'Bio is required.',
@@ -25,6 +35,9 @@ const profileSchema = Yup.object({
   ),
 });
 
+// EditProfileScreen: màn sửa profile.
+// Props: navigation — dùng goBack() để đóng màn sau khi lưu/hủy.
+// Trả về: form Formik gồm 2 ô (Name, Bio) và 2 nút (Save Changes, Cancel).
 export default function EditProfileScreen({ navigation }) {
   const { profile, updateProfile } = useProfile();
   const { colors } = useTheme();
@@ -37,16 +50,27 @@ export default function EditProfileScreen({ navigation }) {
         style={styles.keyboardArea}
       >
         <Formik
+          // initialValues: nạp giá trị hiện tại của profile vào form làm điểm xuất phát.
           initialValues={{ name: profile.name, bio: profile.bio }}
+          // Chỉ validate khi rời ô (onBlur), không validate mỗi lần gõ -> đỡ làm phiền khi đang nhập.
           validateOnBlur
           validateOnChange={false}
           validationSchema={profileSchema}
+          // onSubmit chỉ chạy khi dữ liệu hợp lệ: lưu profile (đã trim), tắt cờ submitting rồi quay lại.
           onSubmit={(values, { setSubmitting }) => {
             updateProfile({ name: values.name.trim(), bio: values.bio.trim() });
             setSubmitting(false);
             navigation.goBack();
           }}
         >
+          {/* Render-props của Formik: lấy các handler/state để gắn vào UI:
+              - errors: map lỗi theo field (do validationSchema sinh ra)
+              - handleBlur: báo Formik 1 field đã được chạm/rời (đánh dấu touched)
+              - handleChange: cập nhật values khi gõ
+              - handleSubmit: chạy validate rồi gọi onSubmit nếu hợp lệ
+              - isSubmitting: cờ đang submit -> dùng cho loading của nút Save
+              - touched: field nào đã được chạm -> để chỉ hiện lỗi sau khi người dùng tương tác
+              - values: giá trị hiện tại của form */}
           {({
             errors,
             handleBlur,
@@ -79,6 +103,7 @@ export default function EditProfileScreen({ navigation }) {
 
                 <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
+                {/* Ô Name: chỉ truyền error khi field đã touched -> tránh báo lỗi khi vừa mở form */}
                 <FormInput
                   error={touched.name ? errors.name : undefined}
                   label="Name"
@@ -88,6 +113,7 @@ export default function EditProfileScreen({ navigation }) {
                   returnKeyType="next"
                   value={values.name}
                 />
+                {/* Ô Bio: nhiều dòng, giới hạn 220 ký tự; cùng cơ chế touched/errors như trên */}
                 <FormInput
                   error={touched.bio ? errors.bio : undefined}
                   label="Bio"
@@ -101,7 +127,9 @@ export default function EditProfileScreen({ navigation }) {
               </View>
 
               <View style={styles.actions}>
+                {/* Save: gọi handleSubmit (Formik tự validate trước); loading hiện spinner khi đang submit */}
                 <AppButton loading={isSubmitting} title="Save Changes" onPress={handleSubmit} />
+                {/* Cancel: bỏ thay đổi, quay lại màn trước mà không lưu */}
                 <AppButton title="Cancel" variant="secondary" onPress={navigation.goBack} style={styles.cancel} />
               </View>
             </ScrollView>

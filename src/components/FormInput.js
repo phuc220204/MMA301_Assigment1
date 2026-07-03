@@ -1,10 +1,22 @@
+/**
+ * FormInput.js — Ô nhập liệu có label và thông báo lỗi, dùng chung cho form.
+ * Vai trò: bọc TextInput, đổi màu viền khi có lỗi và hiện icon/dòng lỗi. Dùng ở EditProfile.
+ */
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../context/ThemeContext';
 
+// FormInput: trường nhập liệu tái sử dụng.
+// Props:
+//   - label: nhãn hiển thị phía trên ô nhập.
+//   - error: chuỗi lỗi; có giá trị -> bật trạng thái lỗi (viền đỏ + dòng lỗi).
+//   - multiline: ô nhiều dòng (vd Bio). Mặc định false.
+//   - ...inputProps: các prop còn lại (value, onChangeText, onBlur, placeholder...) chuyển thẳng cho TextInput.
+// Trả về: cụm [label] + [khung input] + [dòng lỗi nếu có].
 export default function FormInput({ label, error, multiline = false, ...inputProps }) {
   const { colors } = useTheme();
+  // hasError: ép error (có thể là string/undefined) về boolean để quyết định cách hiển thị.
   const hasError = Boolean(error);
 
   return (
@@ -13,9 +25,11 @@ export default function FormInput({ label, error, multiline = false, ...inputPro
       <View
         style={[
           styles.inputShell,
+          // Áp thêm style cho ô nhiều dòng khi multiline = true.
           multiline && styles.multilineShell,
           {
             backgroundColor: colors.input,
+            // Viền đỏ khi có lỗi, ngược lại dùng màu viền thường.
             borderColor: hasError ? colors.error : colors.border,
           },
         ]}
@@ -33,10 +47,12 @@ export default function FormInput({ label, error, multiline = false, ...inputPro
             { color: colors.text },
           ]}
         />
+        {/* Icon cảnh báo chỉ hiện khi có lỗi và là ô 1 dòng (ô nhiều dòng không đủ chỗ canh icon) */}
         {hasError && !multiline ? (
           <Ionicons name="alert-circle-outline" size={25} color={colors.error} />
         ) : null}
       </View>
+      {/* Dòng mô tả lỗi nằm dưới ô nhập, chỉ hiện khi có error */}
       {hasError ? <Text style={[styles.error, { color: colors.error }]}>{error}</Text> : null}
     </View>
   );

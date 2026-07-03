@@ -1,8 +1,23 @@
+/**
+ * AppButton.js — Nút bấm dùng chung cho toàn app.
+ * Vai trò: gói Pressable + style theo theme, hỗ trợ 2 biến thể (primary/secondary),
+ * icon tùy chọn và trạng thái loading/disabled. Dùng ở Home, Profile, EditProfile.
+ */
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../context/ThemeContext';
 
+// AppButton: nút bấm có thể tái sử dụng.
+// Props:
+//   - title: chữ hiển thị trên nút (đồng thời là accessibilityLabel).
+//   - onPress: callback khi bấm.
+//   - variant: 'primary' (nền đậm) hoặc 'secondary' (nền nhạt). Mặc định 'primary'.
+//   - icon: tên icon Ionicons hiện bên trái title (tùy chọn).
+//   - disabled: khóa nút, mờ đi. Mặc định false.
+//   - loading: hiện spinner thay cho nội dung, đồng thời khóa bấm. Mặc định false.
+//   - style: style ngoài ghi đè/bổ sung.
+// Trả về: 1 Pressable đã style sẵn.
 export default function AppButton({
   title,
   onPress,
@@ -13,6 +28,7 @@ export default function AppButton({
   style,
 }) {
   const { colors } = useTheme();
+  // isPrimary: cờ quyết định màu nền/chữ; tránh so sánh chuỗi 'primary' lặp lại nhiều nơi.
   const isPrimary = variant === 'primary';
 
   return (
@@ -24,14 +40,17 @@ export default function AppButton({
       style={({ pressed }) => [
         styles.button,
         {
+          // Màu nền/viền chọn theo variant: primary dùng màu chính, secondary dùng màu nhạt.
           backgroundColor: isPrimary ? colors.primary : colors.primaryLight,
           borderColor: isPrimary ? colors.primary : colors.primaryLight,
+          // opacity phản hồi trạng thái: disabled mờ nhất, đang nhấn (pressed) mờ nhẹ, còn lại rõ.
           opacity: disabled ? 0.55 : pressed ? 0.86 : 1,
         },
         style,
       ]}
     >
       {loading ? (
+        // Đang loading: hiện spinner, màu tương phản với nền theo variant.
         <ActivityIndicator color={isPrimary ? colors.white : colors.primary} />
       ) : (
         <>

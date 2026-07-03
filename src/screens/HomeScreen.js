@@ -1,3 +1,7 @@
+/**
+ * HomeScreen.js — Màn hình chính (route 'Home').
+ * Vai trò: chào người dùng bằng ProfileCard bản gọn và 1 nút điều hướng sang màn Profile.
+ */
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,6 +11,9 @@ import ProfileCard from '../components/ProfileCard';
 import { useProfile } from '../context/ProfileContext';
 import { useTheme } from '../context/ThemeContext';
 
+// HomeScreen: màn chính.
+// Props: navigation — do React Navigation truyền vào, dùng để chuyển màn.
+// Trả về: layout chào mừng + nút "View My Profile".
 export default function HomeScreen({ navigation }) {
   const { profile } = useProfile();
   const { colors } = useTheme();
@@ -30,6 +37,7 @@ export default function HomeScreen({ navigation }) {
             ]}
           >
             <ProfileCard compact profile={profile} />
+            {/* Bấm nút -> navigation.navigate('Profile') chuyển sang màn Profile */}
             <AppButton
               title="View My Profile"
               onPress={() => navigation.navigate('Profile')}
